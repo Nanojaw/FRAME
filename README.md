@@ -1,18 +1,39 @@
 # FRAME
-The FRAME language
+The FRAME programming language
 
 ## Syntax
-instruction place; parameter, parameter
+#### Basic structure
+`instruction place; parameter, parameter`
 
-modules
+built-in instruction
+where to save the result
+parameters for the instruction, separated by a comma
+
+modules for importing code
+
+structures for clumping variables and functions
+
+block = pointer with size
 
 ### Instructions
-`do` calls a function : `do var; function()`
+`do` calls a function : `do var; function_name, parameter`
 
-`call` calls a void (non-returning function) : `call void_function()`
+`call` calls a subroutine : `call subroutine_name, parameter`
 
 `use` imports a module : `use module_name`
 
-`for` loops a set of code a specific amount of times : `for i; start, end, increase`
+`end` ends the current scope :
 
-`add` adds two numbers and returns the sum : `add sum; a, b` 
+    fn name in parameter: size out result: size
+        (some code)
+    end
+
+`for` loops a set of code a specific amount of times : 
+
+    for i: size; start, end, increase
+        (some code)
+    end
+
+`while` loops until a condition is met : 
+
+`var` creates a new variable : `var name: size; value`
