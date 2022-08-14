@@ -9,6 +9,8 @@ built-in instruction
 where to save the result
 parameters for the instruction, separated by a comma
 
+some instructions do not return anything and are therefore written `instruction parameter, parameter`
+
 modules for importing code
 
 structures for clumping variables and functions
@@ -37,3 +39,10 @@ block = pointer with size
 `while` loops until a condition is met : 
 
 `var` creates a new variable : `var name: size; value`
+
+`if` creates a conditional code block : 
+
+    if condition
+        (some code)
+    end
+    
