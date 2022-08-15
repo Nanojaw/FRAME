@@ -24,7 +24,7 @@ block = pointer with size
 
 `use` imports a module : `use module_name`
 
-`end` ends the current scope :
+`end` ends the current code block :
 
     fn name in parameter: size out result: size
         (some code)
@@ -38,11 +38,35 @@ block = pointer with size
 
 `while` loops until a condition is met : 
 
+    while condition
+        (some code)
+    end
+
 `var` creates a new variable : `var name: size; value`
 
 `if` creates a conditional code block : 
 
     if condition
+        (some code)
+    end
+    
+`else if` creates a conditional code block which is evalutated if the previous if isn't run :
+
+    if condition
+        (some code)
+    else if condition
+        (some code)
+    else if condition
+        (some code)
+    end
+        
+`else` creates a code block which is run if the previous if isn't :
+
+    if condition
+        (some code)
+    else if condition
+        (some code)
+    else
         (some code)
     end
     
