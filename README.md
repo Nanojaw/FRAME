@@ -24,7 +24,7 @@ block = pointer with size
 
 `use` imports a module : `use module_name`
 
-`end` ends the current code block :
+`end` ends the current scope :
 
     fn name in parameter: size out result: size
         (some code)
@@ -70,3 +70,4 @@ block = pointer with size
         (some code)
     end
     
+Note that else and else if end the scope of the previous if, and therefore `end` is only needed after the last `else`/`else if`
