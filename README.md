@@ -3,17 +3,25 @@ The FRAME programming language
 
 ## Syntax
 #### Basic structure
-`instruction place; parameter, parameter`
+`instruction place (parameter, parameter)`
 
-The basic structure of FRAME is built on a system where a built-in instruction is entered, this is then followed by a place for saving the result and a semicolon marking the beginning of the subsequent parameters. The parameters are separated by a comma.
+The basic structure of FRAME is built on a system where a built-in instruction is entered, this is then followed by a place for saving the result. The parameters are surrounded by parenthesis and separated with a comma.
 
-In FRAME some instructions do not return anything and are therefore written `instruction parameter, parameter`
+In FRAME some instructions do not return anything and are therefore written `instruction (parameter, parameter)`
+
+When passing the result of a instruction directly to another instruction the place is omitted and the `instruction (parameter, parameter)` syntax is used
 
 modules for importing code
 
 structures for clumping variables and functions
 
 block = pointer with size
+
+    fn fib (x: int) out: int
+        if smaller x, 3
+            return 1
+        else
+            return (add (do (fib, subtract (x, 1)), do (fib, subtract (x, 2)))
 
 ### Instructions
 `do` calls a function : `do var; function_name, parameter`
@@ -24,7 +32,7 @@ block = pointer with size
 
 `end` ends the current scope :
 
-    fn name in parameter: size out result: size
+    fn name (parameter: size) out result: size
         (some code)
     end
 
@@ -68,4 +76,4 @@ block = pointer with size
         (some code)
     end
     
-Note that else and else if end the scope of the previous if, and therefore `end` is only needed after the last `else`/`else if`
+Note that else and else if ends the scope of the previous if, and therefore `end` is only needed after the last `else`/`else if`
