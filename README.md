@@ -5,11 +5,9 @@ The FRAME programming language
 #### Basic structure
 `instruction place; parameter, parameter`
 
-built-in instruction
-where to save the result
-parameters for the instruction, separated by a comma
+The basic structure of FRAME is built on a system where a built-in instruction is entered, this is then followed by a place for saving the result and a semicolon marking the beginning of the subsequent parameters. The parameters are separated by a comma.
 
-some instructions do not return anything and are therefore written `instruction parameter, parameter`
+In FRAME some instructions do not return anything and are therefore written `instruction parameter, parameter`
 
 modules for importing code
 
