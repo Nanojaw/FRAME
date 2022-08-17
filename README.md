@@ -24,11 +24,11 @@ block = pointer with size
             return (add (do (fib, subtract (x, 1)), do (fib, subtract (x, 2)))
 
 ### Instructions
-`do` calls a function : `do var; function_name, parameter`
+`do` calls a function : `do var; (function_name, parameter)`
 
-`call` calls a subroutine : `call subroutine_name, parameter`
+`call` calls a subroutine : `call (subroutine_name, parameter)`
 
-`use` imports a module : `use module_name`
+`use` imports a module : `use (module_name)`
 
 `end` ends the current scope :
 
@@ -38,29 +38,29 @@ block = pointer with size
 
 `for` loops a set of code a specific amount of times : 
 
-    for i: size; start, end, increase
+    for i: size (start, end, increase)
         (some code)
     end
 
 `while` loops until a condition is met : 
 
-    while condition
+    while (condition)
         (some code)
     end
 
-`var` creates a new variable : `var name: size; value`
+`var` creates a new variable : `var name: size; (value)`
 
 `if` creates a conditional code block : 
 
-    if condition
+    if (condition)
         (some code)
     end
     
 `else if` creates a conditional code block which is evalutated if the previous if isn't run :
 
-    if condition
+    if (condition)
         (some code)
-    else if condition
+    else if (condition)
         (some code)
     else if condition
         (some code)
@@ -68,7 +68,7 @@ block = pointer with size
         
 `else` creates a code block which is run if the previous if isn't :
 
-    if condition
+    if (condition)
         (some code)
     else if condition
         (some code)
