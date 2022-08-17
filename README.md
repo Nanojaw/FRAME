@@ -1,5 +1,5 @@
 # FRAME
-The FRAME programming language
+The FRAME programming language, built with LLVM
 
 ## Syntax
 #### Basic structure
@@ -18,8 +18,8 @@ structures for clumping variables and functions
 block = pointer with size
 
     fn fib (x: int) out: int
-        if smaller x, 3
-            return 1
+        if smaller (x, 3)
+            return (1)
         else
             return (add (do (fib, subtract (x, 1)), do (fib, subtract (x, 2)))
 
@@ -32,13 +32,13 @@ block = pointer with size
 
 `end` ends the current scope :
 
-    fn name (parameter: size) out result: size
+    fn name (parameter: type) out result: type
         (some code)
     end
 
 `for` loops a set of code a specific amount of times : 
 
-    for i: size (start, end, increase)
+    for i: type (start, end, increase)
         (some code)
     end
 
@@ -48,7 +48,7 @@ block = pointer with size
         (some code)
     end
 
-`var` creates a new variable : `var name: size; (value)`
+`var` creates a new variable : `var name: type; (value)`
 
 `if` creates a conditional code block : 
 
