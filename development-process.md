@@ -7,7 +7,7 @@ This file contains a summary of the development process of FRAME.
 - [LLVM](#using-llvm)
 
 ## The idea
-Every project starts as an idea. This one was born from XPulseIV wanting to make his own language, and TuffenDuffen wanting to build an editor. However, with zero experience in any of the fields, things had to start small. The idea of a simple language with an accompanying editor was the result of those dreams.
+Every project starts as an idea. This one was born from XpulseIV wanting to make his own language, and TuffenDuffen wanting to build an editor. However, with zero experience in any of the fields, things had to start small. The idea of a simple language with an accompanying editor was the result of those dreams.
 
 Since both of us prefer compiled languages to interpreted ones, we had to design the language with making a compiler for it in mind. Therefore the language had to be very low level, since more abstraction meant more work for us. So, a compiled very low level language? Sounds like Assembly, which we have taken inspiration from. The WebAssembly text representation, WAT, has also played a big role in the design. 
 
