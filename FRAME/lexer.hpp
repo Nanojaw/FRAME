@@ -2,11 +2,13 @@
 #define LEXER_HPP
 
 #include <string>
+#include <iostream>
 
 enum token_type {
-    eof = -1,
-    instruction = -2,
-    number = -3
+    eof,
+    unknown,
+    instruction,
+    number,
 };
 
 class Token {
@@ -17,27 +19,52 @@ public:
 };
 
 class Lexer {
+    std::istream& stream;
 public:
-    inline Token getToken() {
+    Lexer(std::istream& is) : stream(is) {}
+    inline Token GetToken() {
         Token result = Token();
 
         int lastchar = ' ';
 
         while (isspace(lastchar)) {
-            lastchar = getchar();
+            lastchar = stream.get();
         }
 
         if (isalpha(lastchar)) {
+            result.type = instruction;
             result.identifier = lastchar;
 
-            while (isalnum(lastchar = getchar())) {
+            while (isalnum(lastchar = stream.get())) {
                 result.identifier += lastchar;
             }
 
             return result;
         }
 
-        if (isdigit)
+        if (isdigit(lastchar)) {
+            result.type = number;
+
+            
+            std::string numStr;
+
+            while (isdigit(lastchar)) {
+                numStr += lastchar;
+                lastchar = stream.get();
+            }
+
+            result.value = std::stoi(numStr);
+            return result;
+        }
+
+        if (lastchar == EOF) {
+            result.type = eof;
+            return result;
+        }
+
+        result.type = unknown;
+        result.identifier += lastchar;
+        return result;
     }
 };
 
