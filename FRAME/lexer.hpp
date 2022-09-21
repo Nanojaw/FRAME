@@ -68,4 +68,4 @@ public:
     }
 };
 
-#endif
+#endif // !LEXER_HPP

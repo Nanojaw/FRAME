@@ -25,4 +25,4 @@ public:
 		: _name(name), _args(std::move(args)) {}
 };
 
-#endif
+#endif // !AST_HPP

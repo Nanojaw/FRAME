@@ -134,6 +134,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AST.hpp" />
+    <ClInclude Include="codegen.hpp" />
     <ClInclude Include="lexer.hpp" />
     <ClInclude Include="parser.hpp" />
   </ItemGroup>

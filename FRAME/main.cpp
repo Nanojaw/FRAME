@@ -10,7 +10,7 @@ int main()
 	auto lexer = Lexer(f);
 	auto parser = Parser(lexer);
 
-	parser.buildAST();
+	auto test = parser.buildAST();
 
 	f.close();
 	return 0;
