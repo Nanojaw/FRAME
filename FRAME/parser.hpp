@@ -20,17 +20,23 @@ class Parser {
 	std::unique_ptr<ExprAST> ParseInstruction() {
 		if (token.identifier == "add") {
 			// TODO: Refactor to a more modular approach
+			
+			std::vector <std::unique_ptr<ExprAST>> args;
+			NextToken();
+			if (token.identifier != "(") return LogError("Expected opening parethesis, got \"" + token.identifier + "\"");
+			NextToken();
+			if (token.type != number) return LogError("Invalid argument type; expected number, got " + token.type);
+			args.push_back(ParseNumber());
+			NextToken();
+			if (token.identifier != ",") return LogError("Expected comma, got " + token.identifier);
+			NextToken();
+			if (token.type != number) return LogError("Invalid argument type; expected number, got " + token.type);
+			args.push_back(ParseNumber());
+			NextToken();
+			if (token.identifier != ")") return LogError("Expected closing parethesis, got " + token.identifier);
 
-			NextToken();
-			if (token.identifier != "(") return LogError("Expected opening parethesis");
-			NextToken();
-			if (token.type != number) return LogError("Invalid argument type, expected number");
-			NextToken();
-			if (token.identifier != ",") return LogError("Expected comma");
-			NextToken();
-			if (token.type != number) return LogError("Invalid argument type, expected number");
-			NextToken();
-			if (token.identifier != ")") return LogError("Expected closing parethesis");
+			auto result = InstructionExprAST("add", args);
+			return std::make_unique<InstructionExprAST>(result);
 		}
 	}
 

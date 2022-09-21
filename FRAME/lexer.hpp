@@ -20,12 +20,11 @@ public:
 
 class Lexer {
     std::istream& stream;
+    int lastchar = ' ';
 public:
     Lexer(std::istream& is) : stream(is) {}
     inline Token GetToken() {
         Token result = Token();
-
-        int lastchar = ' ';
 
         while (isspace(lastchar)) {
             lastchar = stream.get();
@@ -47,10 +46,10 @@ public:
 
             
             std::string numStr;
+            numStr = lastchar;
 
-            while (isdigit(lastchar)) {
+            while (isdigit(lastchar = stream.get())) {
                 numStr += lastchar;
-                lastchar = stream.get();
             }
 
             result.value = std::stoi(numStr);
@@ -64,6 +63,7 @@ public:
 
         result.type = unknown;
         result.identifier += lastchar;
+        lastchar = stream.get();
         return result;
     }
 };
