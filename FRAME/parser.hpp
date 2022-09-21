@@ -35,8 +35,7 @@ class Parser {
 			NextToken();
 			if (token.identifier != ")") return LogError("Expected closing parethesis, got " + token.identifier);
 
-			auto result = InstructionExprAST("add", args);
-			return std::make_unique<InstructionExprAST>(result);
+			return std::make_unique<InstructionExprAST>("add", std::move(args));
 		}
 	}
 
