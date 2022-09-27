@@ -5,24 +5,36 @@
 #include <memory>
 #include <vector>
 
+#include "llvm/IR/Constants.h"
+
+enum instructions
+{
+	comment,
+	add
+};
+
 class ExprAST {
 public:
 	virtual ~ExprAST() {}
+	virtual llvm::Value* codegen() = 0;
 };
 
 class NumberExprAST : public ExprAST {
 	int _val;
+
 public:
-	NumberExprAST(int val) : _val(val) {};
+	NumberExprAST(int val) : _val(val) {}
+	llvm::Value* codegen() override;
 };
 
 class InstructionExprAST : public ExprAST {
-	std::string _name;
+	int _instruction;
 	std::vector<std::unique_ptr<ExprAST>> _args;
 public:
-	InstructionExprAST(const std::string& name,
+	InstructionExprAST(const int instruction,
 		std::vector<std::unique_ptr<ExprAST>> args)
-		: _name(name), _args(std::move(args)) {}
+		: _instruction(instruction), _args(std::move(args)) {}
+	llvm::Value* codegen() override;
 };
 
 #endif // !AST_HPP

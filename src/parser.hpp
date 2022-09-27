@@ -4,8 +4,13 @@
 #include "lexer.hpp"
 #include "AST.hpp"
 #include <iostream>
+#include <map>
 
 class Parser {
+	std::map<std::string, int> _instruction_map = {
+		{"add", 1}
+	};
+
 	Lexer lexer;
 
 	Token token;
@@ -35,7 +40,7 @@ class Parser {
 			NextToken();
 			if (token.identifier != ")") return LogError("Expected closing parethesis, got " + token.identifier);
 
-			return std::make_unique<InstructionExprAST>("add", std::move(args));
+			return std::make_unique<InstructionExprAST>(_instruction_map.at(token.identifier), std::move(args));
 		}
 	}
 
