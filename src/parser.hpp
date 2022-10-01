@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+
 #include "lexer.hpp"
 #include "AST.hpp"
 
