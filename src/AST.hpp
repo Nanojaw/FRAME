@@ -1,5 +1,4 @@
-#ifndef AST_HPP
-#define AST_HPP
+#pragma once
 
 #include <string>
 #include <memory>
@@ -7,34 +6,34 @@
 
 #include "llvm/IR/Constants.h"
 
+namespace AST {
 enum instructions
 {
 	comment,
 	add
 };
 
-class ExprAST {
+class Expr {
 public:
-	virtual ~ExprAST() {}
+	virtual ~Expr() {}
 	virtual llvm::Value* codegen() = 0;
 };
 
-class NumberExprAST : public ExprAST {
+class NumberExpr : public Expr {
 	int _val;
 
 public:
-	NumberExprAST(int val) : _val(val) {}
+	NumberExpr(int val) : _val(val) {}
 	llvm::Value* codegen() override;
 };
 
-class InstructionExprAST : public ExprAST {
+class InstructionExpr : public Expr {
 	int _instruction;
-	std::vector<std::unique_ptr<ExprAST>> _args;
+	std::vector<std::unique_ptr<Expr>> _args;
 public:
-	InstructionExprAST(const int instruction,
-		std::vector<std::unique_ptr<ExprAST>> args)
+	InstructionExpr(const int instruction,
+		std::vector<std::unique_ptr<Expr>> args)
 		: _instruction(instruction), _args(std::move(args)) {}
 	llvm::Value* codegen() override;
 };
-
-#endif // !AST_HPP
+}
