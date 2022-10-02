@@ -11,7 +11,7 @@ static std::unique_ptr<llvm::IRBuilder<>> Builder;
 static std::map<std::string, llvm::Value*> NamedValues;
 
 std::unique_ptr<AST::Expr> LogError(const char* Str) {
-	fprintf(stderr, "Error: %s\n", Str);
+	fprintf(stderr, "Codegen error: %s\n", Str);
 	return nullptr;
 }
 

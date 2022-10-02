@@ -10,9 +10,9 @@ class Parser {
 
 	Token token;
 
-	std::map<std::string, int> instruction_map = {
+	const std::map<std::string, int> instruction_map = {
 		{"comment", AST::comment},
-		{"add", AST::instructions::add}
+		{"add", AST::add}
 	};
 
 	void NextToken() { token = lexer.GetToken(); }
@@ -40,7 +40,7 @@ class Parser {
 			NextToken();
 			if (token.identifier != ")") return LogError("Expected closing parenthesis, got " + token.identifier);
 
-			return std::make_unique<AST::InstructionExpr>(instruction_map.at(token.identifier), std::move(args));
+			return std::make_unique<AST::InstructionExpr>(AST::add, std::move(args));
 		}
 	}
 
