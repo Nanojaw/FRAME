@@ -1,17 +1,15 @@
-﻿#include <iostream>
-#include <fstream>
-#include <filesystem>
+﻿#include <fstream>
 
 #include "modparser.hpp"
 
-int main()
+auto main() -> int
 {
-	std::ifstream f("../src/test.frame", std::ifstream::in);
-	if (f.good() != true) return 1;
-	modparser::parser parser = modparser::parser(f);
+    std::ifstream f("../src/test.frame", std::ifstream::in);
+    if (f.good() != true) return 1;
+    auto parser = modparser::cParser(f);
 
-	parser.
+    //parser
 
-	f.close();
-	return 0;
+    f.close();
+    return 0;
 }

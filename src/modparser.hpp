@@ -1,49 +1,56 @@
 // The modparser is the component which reads and parses a file into an AST
-// which the other components can use. It constists of a lexer, which reads the
+// which the other components can use. It consists of a lexer, which reads the
 // input and turns it into tokens, and the parser, which turns the tokens into
-// an AST. Since the lexer should not be used elsewhere than the parser, the 
+// an AST. Since the lexer should not be used elsewhere than the parser, the
 // parser creates the lexer to ensure that nothing is skipped.
 #pragma once
 
-#include <string>
 #include <istream>
 #include <map>
+#include <string>
 #include "AST.hpp"
 
-namespace modparser {
-	enum lex_token_type {
-		eof,
-		unknown,
-		instruction,
-		number,
-		module,
-	};
+namespace modparser
+{
+    enum lex_token_type
+    {
+        eof,
+        unknown,
+        instruction,
+        number,
+        module,
+    };
 
-	class lex_token {
-	public:
-		lex_token_type type;
-		std::string identifier;
-		int value;
-	};
+    class cLexToken
+    {
+    public:
+        lex_token_type Type;
+        std::string Identifier;
+        int Value;
+    };
 
-	class lexer {
-		std::istream& input_stream_;
-	public:
-		lexer(std::istream& is) : input_stream_(is) {}
-	};
-	class parser {
-		lexer lexer_;
+    class cLexer
+    {
+        std::istream& _input_stream_;
 
-		lex_token token;
+    public:
+        explicit cLexer(std::istream& is) : _input_stream_(is) {}
+    };
 
-		const std::map<std::string, int> instruction_map = {
-		{"comment", AST::comment},
-		{"add", AST::add}
-		};
+    class cParser
+    {
+        cLexer _lexer_;
 
-		void NextToken() { token = lexer_.GetToken(); }
+        cLexToken _token;
 
-	public:
-		parser(std::istream& is) : lexer_(lexer(is)) {}
-	};
+        const std::map<std::string, int> _instruction_map = {
+            {"comment", AST::comment},
+            {"add", AST::add}
+        };
+
+        //void NextToken() { token = lexer_.GetToken(); }
+
+    public:
+        explicit cParser(std::istream& is) : _lexer_(cLexer(is)), _token{} {}
+    };
 }

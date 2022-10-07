@@ -2,74 +2,83 @@
 
 #include <map>
 
-#include "lexer.hpp"
 #include "AST.hpp"
+#include "lexer.hpp"
 
-class Parser {
-	Lexer lexer;
+class cParser
+{
+    cLexer _lexer;
 
-	Token token;
+    cToken _token;
 
-	const std::map<std::string, int> instruction_map = {
-		{"comment", AST::comment},
-		{"add", AST::add}
-	};
+    const std::map<std::string, int> _instruction_map = {
+        {"comment", AST::comment},
+        {"add", AST::add}
+    };
 
-	void NextToken() { token = lexer.GetToken(); }
+    auto NextToken() -> void { _token = _lexer.GetToken(); }
 
-	static std::unique_ptr<AST::Expr> LogError(const std::string& info) {
-		fprintf(stderr, "Parser Error: %s \n", info.c_str());
-		return nullptr;
-	}
+    static auto LogError(const std::string& info) -> std::unique_ptr<AST::Expr>
+    {
+        fprintf(stderr, "Parser Error: %s \n", info.c_str());
+        return nullptr;
+    }
 
-	std::unique_ptr<AST::Expr> ParseInstruction() {
-		if (token.identifier == "add") {
-			// TODO: Refactor to a more modular approach
+    auto ParseInstruction() -> std::unique_ptr<AST::Expr>
+    {
+        if (_token.Identifier == "add")
+        {
+            // TODO: Refactor to a more modular approach
 
-			std::vector <std::unique_ptr<AST::Expr>> args;
-			NextToken();
-			if (token.identifier != "(") return LogError("Expected opening parenthesis, got \"" + token.identifier + "\"");
-			NextToken();
-			if (token.type != number) return LogError("Invalid argument type; expected number, got " + token.type);
-			args.push_back(ParseNumber());
-			NextToken();
-			if (token.identifier != ",") return LogError("Expected comma, got " + token.identifier);
-			NextToken();
-			if (token.type != number) return LogError("Invalid argument type; expected number, got " + token.type);
-			args.push_back(ParseNumber());
-			NextToken();
-			if (token.identifier != ")") return LogError("Expected closing parenthesis, got " + token.identifier);
+            std::vector<std::unique_ptr<AST::Expr>> args;
+            NextToken();
+            if (_token.Identifier != "(") return LogError("Expected opening parenthesis, got \"" + _token.Identifier + "\"");
+            NextToken();
+            if (_token.Type != number) return LogError("Invalid argument type; expected number, got " + _token.Type);
+            args.push_back(ParseNumber());
+            NextToken();
+            if (_token.Identifier != ",") return LogError("Expected comma, got " + _token.Identifier);
+            NextToken();
+            if (_token.Type != number) return LogError("Invalid argument type; expected number, got " + _token.Type);
+            args.push_back(ParseNumber());
+            NextToken();
+            if (_token.Identifier != ")") return LogError("Expected closing parenthesis, got " + _token.Identifier);
 
-			return std::make_unique<AST::InstructionExpr>(AST::add, std::move(args));
-		}
-	}
+            return std::make_unique<AST::InstructionExpr>(AST::add, std::move(args));
+        }
+        return {};
+    }
 
-	std::unique_ptr<AST::Expr> ParseNumber() {
-		return std::make_unique<AST::NumberExpr>(token.value);
-	}
+    auto ParseNumber() -> std::unique_ptr<AST::Expr>
+    {
+        return std::make_unique<AST::NumberExpr>(_token.Value);
+    }
 
-	std::unique_ptr<AST::Expr> ParseModule() {
-		return nullptr;
-	}
+    static auto ParseModule() -> std::unique_ptr<AST::Expr>
+    {
+        return nullptr;
+    }
 
 public:
-	Parser(const Lexer& l) : lexer(l) {}
+    explicit cParser(const cLexer& l) : _lexer(l), _token{} {}
 
-	inline std::unique_ptr<AST::Expr> buildAST() {
-		NextToken();
+    auto BuildAst() -> std::unique_ptr<AST::Expr>
+    {
+        NextToken();
 
-		switch (token.type) {
-		case (eof):
-			return nullptr;
-		case (unknown):
-			return LogError("Unknown type");
-		case (instruction):
-			return ParseInstruction();
-		case (number):
-			return ParseNumber();
-		case (module):
-			return ParseModule();
-		}
-		return nullptr;
-	}
+        switch (_token.Type)
+        {
+        case (eof):
+            return nullptr;
+        case (unknown):
+            return LogError("Unknown type");
+        case (instruction):
+            return ParseInstruction();
+        case (number):
+            return ParseNumber();
+        case (module):
+            return ParseModule();
+        }
+        return nullptr;
+    }
 };

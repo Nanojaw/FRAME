@@ -2,41 +2,44 @@
 
 #include "AST.hpp"
 
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
+#include "llvm\IR\IRBuilder.h"
+#include "llvm\IR\LLVMContext.h"
 
-static std::unique_ptr<llvm::LLVMContext> TheContext;
-static std::unique_ptr<llvm::Module> TheModule;
-static std::unique_ptr<llvm::IRBuilder<>> Builder;
-static std::map<std::string, llvm::Value*> NamedValues;
+const static std::unique_ptr<llvm::LLVMContext> the_context;
+const static std::unique_ptr<llvm::Module> the_module;
+const static std::unique_ptr<llvm::IRBuilder<>> builder;
+const static std::map<std::string, llvm::Value*> named_values;
 
-std::unique_ptr<AST::Expr> LogError(const char* Str) {
-	fprintf(stderr, "Codegen error: %s\n", Str);
-	return nullptr;
-}
-
-llvm::Value* LogErrorV(const char* Str) {
-	LogError(Str);
-	return nullptr;
-}
-
-llvm::Value* AST::NumberExpr::codegen()
+auto LogError(const char* str) -> std::unique_ptr<AST::Expr>
 {
-	return llvm::ConstantInt::get(*TheContext, llvm::APInt(sizeof(int) * 8, _val, true));
+    fprintf(stderr, "Codegen error: %s\n", str);
+    return nullptr;
 }
 
-llvm::Value* AST::InstructionExpr::codegen()
+auto LogErrorV(const char* str) -> llvm::Value*
 {
-	switch (_instruction)
-	{
-	case instructions::add: 
-		llvm::Value* L = _args[0]->codegen();
-		llvm::Value* R = _args[1]->codegen();
-		if (!L || !R)
-			return nullptr;
+    LogError(str);
+    return nullptr;
+}
 
-		return Builder->CreateAdd(L, R, "addtmp");
-	}
+auto AST::NumberExpr::codegen() -> llvm::Value*
+{
+    return llvm::ConstantInt::get(*the_context, llvm::APInt(sizeof(int) * 8, _val, true));
+}
 
-	return nullptr;
+auto AST::InstructionExpr::codegen() -> llvm::Value*
+{
+    switch (_instruction)
+    {
+    case instructions::add:
+        llvm::Value* l = _args[0]->codegen();
+        llvm::Value* r = _args[1]->codegen();
+        if (!l || !r)
+            return nullptr;
+
+        return builder->CreateAdd(l, r, "addtmp");
+    default: ;
+    }
+
+    return nullptr;
 }

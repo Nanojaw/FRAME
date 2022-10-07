@@ -1,7 +1,6 @@
 #pragma once
 
-namespace modbinder {
-	class binder {
-
-	};
+namespace modbinder
+{
+    class cBinder { };
 }
