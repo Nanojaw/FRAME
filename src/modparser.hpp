@@ -7,6 +7,8 @@
 
 #include <string>
 #include <istream>
+#include <map>
+#include "AST.hpp"
 
 namespace modparser {
 	enum lex_token_type {
@@ -24,14 +26,24 @@ namespace modparser {
 		int value;
 	};
 
-	class Lexer {
-		std::istream& input_stream;
+	class lexer {
+		std::istream& input_stream_;
 	public:
-		Lexer(std::istream& is) : input_stream(is) {}
+		lexer(std::istream& is) : input_stream_(is) {}
 	};
 	class parser {
-		Lexer lexer;
+		lexer lexer_;
+
+		lex_token token;
+
+		const std::map<std::string, int> instruction_map = {
+		{"comment", AST::comment},
+		{"add", AST::add}
+		};
+
+		void NextToken() { token = lexer_.GetToken(); }
+
 	public:
-		parser(std::istream& is) : lexer(Lexer(is)) {}
+		parser(std::istream& is) : lexer_(lexer(is)) {}
 	};
 }
