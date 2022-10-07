@@ -32,8 +32,6 @@ namespace modparser {
 	class parser {
 		Lexer lexer;
 	public:
-		inline parser(std::istream& is) {
-			lexer = Lexer(is);
-		}
+		parser(std::istream& is) : lexer(Lexer(is)) {}
 	};
 }
