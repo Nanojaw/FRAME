@@ -1,14 +1,14 @@
-#ifndef LEXER_HPP
-#define LEXER_HPP
+#pragma once
 
 #include <string>
-#include <iostream>
+#include <istream>
 
 enum token_type {
     eof,
     unknown,
     instruction,
     number,
+    module,
 };
 
 class Token {
@@ -31,20 +31,25 @@ public:
         }
 
         if (isalpha(lastchar)) {
-            result.type = instruction;
             result.identifier = lastchar;
 
             while (isalnum(lastchar = stream.get())) {
                 result.identifier += lastchar;
             }
 
+            if (result.identifier == "mod") {
+                result.type = module;
+                return result;
+            }
+
+            result.type = instruction;
             return result;
         }
 
         if (isdigit(lastchar)) {
             result.type = number;
 
-            
+
             std::string numStr;
             numStr = lastchar;
 
@@ -67,5 +72,3 @@ public:
         return result;
     }
 };
-
-#endif // !LEXER_HPP

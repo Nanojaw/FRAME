@@ -1,34 +1,34 @@
-#ifndef PARSER_HPP
-#define PARSER_HPP
+#pragma once
+
+#include <map>
 
 #include "lexer.hpp"
 #include "AST.hpp"
-#include <iostream>
-#include <map>
 
 class Parser {
-	std::map<std::string, int> _instruction_map = {
-		{"add", 1}
-	};
-
 	Lexer lexer;
 
 	Token token;
 
+	const std::map<std::string, int> instruction_map = {
+		{"comment", AST::comment},
+		{"add", AST::add}
+	};
+
 	void NextToken() { token = lexer.GetToken(); }
 
-	std::unique_ptr<ExprAST> LogError(std::string info) {
-		fprintf(stderr, "Parser Error: %s \n", info.c_str()); 
+	static std::unique_ptr<AST::Expr> LogError(const std::string& info) {
+		fprintf(stderr, "Parser Error: %s \n", info.c_str());
 		return nullptr;
 	}
 
-	std::unique_ptr<ExprAST> ParseInstruction() {
+	std::unique_ptr<AST::Expr> ParseInstruction() {
 		if (token.identifier == "add") {
 			// TODO: Refactor to a more modular approach
-			
-			std::vector <std::unique_ptr<ExprAST>> args;
+
+			std::vector <std::unique_ptr<AST::Expr>> args;
 			NextToken();
-			if (token.identifier != "(") return LogError("Expected opening parethesis, got \"" + token.identifier + "\"");
+			if (token.identifier != "(") return LogError("Expected opening parenthesis, got \"" + token.identifier + "\"");
 			NextToken();
 			if (token.type != number) return LogError("Invalid argument type; expected number, got " + token.type);
 			args.push_back(ParseNumber());
@@ -38,20 +38,24 @@ class Parser {
 			if (token.type != number) return LogError("Invalid argument type; expected number, got " + token.type);
 			args.push_back(ParseNumber());
 			NextToken();
-			if (token.identifier != ")") return LogError("Expected closing parethesis, got " + token.identifier);
+			if (token.identifier != ")") return LogError("Expected closing parenthesis, got " + token.identifier);
 
-			return std::make_unique<InstructionExprAST>(_instruction_map.at(token.identifier), std::move(args));
+			return std::make_unique<AST::InstructionExpr>(AST::add, std::move(args));
 		}
 	}
 
-	std::unique_ptr<ExprAST> ParseNumber() {
-		return std::make_unique<NumberExprAST>(token.value);
+	std::unique_ptr<AST::Expr> ParseNumber() {
+		return std::make_unique<AST::NumberExpr>(token.value);
+	}
+
+	std::unique_ptr<AST::Expr> ParseModule() {
+		return nullptr;
 	}
 
 public:
-	Parser(Lexer& l) : lexer(l) {}
+	Parser(const Lexer& l) : lexer(l) {}
 
-	inline std::unique_ptr<ExprAST> buildAST() {
+	inline std::unique_ptr<AST::Expr> buildAST() {
 		NextToken();
 
 		switch (token.type) {
@@ -63,8 +67,9 @@ public:
 			return ParseInstruction();
 		case (number):
 			return ParseNumber();
+		case (module):
+			return ParseModule();
 		}
+		return nullptr;
 	}
 };
-
-#endif // !PARSER_HPP
