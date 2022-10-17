@@ -1,9 +1,10 @@
 #pragma once
 
-#include <string>
 #include <istream>
+#include <string>
 
-enum token_type {
+enum token_type
+{
     eof,
     unknown,
     instruction,
@@ -11,64 +12,69 @@ enum token_type {
     module,
 };
 
-class Token {
+class cToken
+{
 public:
-    token_type type;
-    std::string identifier;
-    int value;
+    token_type Type;
+    std::string Identifier;
+    int Value{};
 };
 
-class Lexer {
-    std::istream& stream;
-    int lastchar = ' ';
+class cLexer
+{
+    std::istream& _stream;
+    int _lastchar = ' ';
+
 public:
-    Lexer(std::istream& is) : stream(is) {}
-    inline Token GetToken() {
-        Token result = Token();
+    explicit cLexer(std::istream& is) : _stream(is) {}
 
-        while (isspace(lastchar)) {
-            lastchar = stream.get();
-        }
+    auto GetToken() -> cToken
+    {
+        auto result = cToken();
 
-        if (isalpha(lastchar)) {
-            result.identifier = lastchar;
+        while (isspace(_lastchar))
+            _lastchar = _stream.get();
 
-            while (isalnum(lastchar = stream.get())) {
-                result.identifier += lastchar;
-            }
+        if (isalpha(_lastchar))
+        {
+            result.Identifier = std::to_string(_lastchar);
 
-            if (result.identifier == "mod") {
-                result.type = module;
+            while (isalnum(_lastchar = _stream.get()))
+                result.Identifier += std::to_string(_lastchar);
+
+            if (result.Identifier == "mod")
+            {
+                result.Type = module;
                 return result;
             }
 
-            result.type = instruction;
+            result.Type = instruction;
             return result;
         }
 
-        if (isdigit(lastchar)) {
-            result.type = number;
+        if (isdigit(_lastchar))
+        {
+            result.Type = number;
 
 
-            std::string numStr;
-            numStr = lastchar;
+            std::string numStr = std::to_string(_lastchar);
 
-            while (isdigit(lastchar = stream.get())) {
-                numStr += lastchar;
-            }
+            while (isdigit(_lastchar = _stream.get()))
+                numStr += std::to_string(_lastchar);
 
-            result.value = std::stoi(numStr);
+            result.Value = std::stoi(numStr);
             return result;
         }
 
-        if (lastchar == EOF) {
-            result.type = eof;
+        if (_lastchar == EOF)
+        {
+            result.Type = eof;
             return result;
         }
 
-        result.type = unknown;
-        result.identifier += lastchar;
-        lastchar = stream.get();
+        result.Type = unknown;
+        result.Identifier += std::to_string(_lastchar);
+        _lastchar = _stream.get();
         return result;
     }
 };
