@@ -2,8 +2,8 @@
 
 #include "AST.hpp"
 
-#include "llvm\IR\IRBuilder.h"
-#include "llvm\IR\LLVMContext.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
 
 const static std::unique_ptr<llvm::LLVMContext> the_context;
 const static std::unique_ptr<llvm::Module> the_module;
@@ -29,17 +29,15 @@ auto AST::NumberExpr::codegen() -> llvm::Value*
 
 auto AST::InstructionExpr::codegen() -> llvm::Value*
 {
-    switch (_instruction)
-    {
-    case instructions::add:
+    if (_instruction == instructions::add) {
         llvm::Value* l = _args[0]->codegen();
         llvm::Value* r = _args[1]->codegen();
         if (!l || !r)
             return nullptr;
 
         return builder->CreateAdd(l, r, "addtmp");
-    default: ;
     }
-
-    return nullptr;
+    else {
+        return nullptr;
+    }
 }

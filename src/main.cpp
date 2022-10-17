@@ -1,4 +1,6 @@
 ﻿#include <fstream>
+#include <iostream>
+#include <filesystem>
 
 #include "modparser.hpp"
 
