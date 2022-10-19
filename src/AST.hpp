@@ -9,7 +9,6 @@
 namespace AST {
 enum instructions
 {
-    comment,
     add
 };
 

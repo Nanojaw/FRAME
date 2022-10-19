@@ -32,9 +32,55 @@ namespace modparser
     class cLexer
     {
         std::istream& _input_stream_;
-
+        int lastchar;
     public:
-        explicit cLexer(std::istream& is) : _input_stream_(is) {}
+        explicit cLexer(std::istream& is) : _input_stream_(is), lastchar(_input_stream_.get()) {} 
+
+        auto GetNextToken() -> cLexToken {
+            auto result = cLexToken();
+
+            while (isspace(lastchar))
+                lastchar = _input_stream_.get();
+
+            if (isalpha(lastchar)) {
+                result.Identifier = std::to_string(lastchar);
+
+            while (isalnum(lastchar = _input_stream_.get()))
+                result.Identifier += std::to_string(lastchar);
+
+                if (result.Identifier == "mod")
+                {
+                    result.Type = module;
+                    return result;
+                }
+
+                result.Type = instruction;
+                return result;
+            }
+
+            if (isdigit(lastchar)) {
+                result.Type = number;
+
+
+                std::string numStr = std::to_string(lastchar);
+
+                while (isdigit(lastchar = _input_stream_.get()))
+                    numStr += std::to_string(lastchar);
+
+                result.Value = std::stoi(numStr);
+                return result;
+            }
+
+            if (lastchar == EOF) {
+                result.Type = eof;
+                return result;
+            }
+
+            result.Type = unknown;
+            result.Identifier += std::to_string(lastchar);
+            lastchar = _input_stream_.get();
+            return result;
+        }
     };
 
     class cParser
@@ -44,7 +90,6 @@ namespace modparser
         cLexToken _token;
 
         const std::map<std::string, int> _instruction_map = {
-            {"comment", AST::comment},
             {"add", AST::add}
         };
 
