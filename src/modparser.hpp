@@ -5,97 +5,89 @@
 // parser creates the lexer to ensure that nothing is skipped.
 #pragma once
 
+#include "AST.hpp"
+
 #include <istream>
 #include <map>
 #include <string>
-#include "AST.hpp"
 
-namespace modparser
-{
-    enum lex_token_type
-    {
-        eof,
-        unknown,
-        instruction,
-        number,
-        module,
-    };
+namespace modparser {
+  enum lex_token_type {
+    eof,
+    unknown,
+    instruction,
+    number,
+    module,
+  };
 
-    class cLexToken
-    {
-    public:
-        lex_token_type Type;
-        std::string Identifier;
-        int Value;
-    };
+  class cLexToken {
+  public:
+    lex_token_type Type;
+    std::string Identifier;
+    int Value;
+  };
 
-    class cLexer
-    {
-        std::istream& _input_stream_;
-        int lastchar;
-    public:
-        explicit cLexer(std::istream& is) : _input_stream_(is), lastchar(_input_stream_.get()) {} 
+  class cLexer {
+    std::istream& _input_stream_;
+    int lastchar;
 
-        auto GetNextToken() -> cLexToken {
-            auto result = cLexToken();
+  public:
+    explicit cLexer(std::istream& is) : _input_stream_(is), lastchar(_input_stream_.get()) { }
 
-            while (isspace(lastchar))
-                lastchar = _input_stream_.get();
+    auto GetNextToken() -> cLexToken {
+      auto result = cLexToken();
 
-            if (isalpha(lastchar)) {
-                result.Identifier = std::to_string(lastchar);
+      while (isspace(lastchar)) lastchar = _input_stream_.get();
 
-            while (isalnum(lastchar = _input_stream_.get()))
-                result.Identifier += std::to_string(lastchar);
+      if (isalpha(lastchar)) {
+        result.Identifier = std::to_string(lastchar);
 
-                if (result.Identifier == "mod")
-                {
-                    result.Type = module;
-                    return result;
-                }
+        while (isalnum(lastchar = _input_stream_.get())) result.Identifier += std::to_string(lastchar);
 
-                result.Type = instruction;
-                return result;
-            }
-
-            if (isdigit(lastchar)) {
-                result.Type = number;
-
-
-                std::string numStr = std::to_string(lastchar);
-
-                while (isdigit(lastchar = _input_stream_.get()))
-                    numStr += std::to_string(lastchar);
-
-                result.Value = std::stoi(numStr);
-                return result;
-            }
-
-            if (lastchar == EOF) {
-                result.Type = eof;
-                return result;
-            }
-
-            result.Type = unknown;
-            result.Identifier += std::to_string(lastchar);
-            lastchar = _input_stream_.get();
-            return result;
+        if (result.Identifier == "mod") {
+          result.Type = module;
+          return result;
         }
+
+        result.Type = instruction;
+        return result;
+      }
+
+      if (isdigit(lastchar)) {
+        result.Type = number;
+
+        std::string numStr = std::to_string(lastchar);
+
+        while (isdigit(lastchar = _input_stream_.get())) numStr += std::to_string(lastchar);
+
+        result.Value = std::stoi(numStr);
+        return result;
+      }
+
+      if (lastchar == EOF) {
+        result.Type = eof;
+        return result;
+      }
+
+      result.Type = unknown;
+      result.Identifier += std::to_string(lastchar);
+      lastchar = _input_stream_.get();
+      return result;
+    }
+  };
+
+  class cParser {
+    cLexer _lexer_;
+
+    cLexToken _token;
+
+    const std::map<std::string, int> _instruction_map = {
+      {"add", AST::add}
     };
 
-    class cParser
-    {
-        cLexer _lexer_;
+    //void NextToken() { token = lexer_.GetToken(); }
 
-        cLexToken _token;
-
-        const std::map<std::string, int> _instruction_map = {
-            {"add", AST::add}
-        };
-
-        //void NextToken() { token = lexer_.GetToken(); }
-
-    public:
-        explicit cParser(std::istream& is) : _lexer_(cLexer(is)), _token{} {}
-    };
-}
+  public:
+    explicit cParser(std::istream& is) : _lexer_(cLexer(is)), _token{} { }
+  };
+} // namespace modparser
