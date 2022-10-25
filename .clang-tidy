@@ -1,0 +1,24 @@
+Checks: '-*,readability-identifier-naming'
+FormatStyle: file
+CheckOptions: 
+  - key: readability-identifer-naming.NameSpaceCase
+    value: CamelCase
+  - key: readability-identifer-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifer-naming.PrivateMemberPrefix
+    value: m_
+  - key: readability-identifer-naming.ClassConstantPrefix
+    value: sc_
+  - key: readability-identifer-naming.ConstantMemberPrefix
+    value: c_
+  - key: readability-identifer-naming.ClassMemberPrefix
+    value: s_
+  - key: readability-identifer-naming.StructCase
+    value: CamelCase
+  - key: readability-identifer-naming.FunctionCase
+    value: CamelCase
+  - key: readability-identifer-naming.VariableCase
+    value: camelBack
+  - key: readability-identifer-naming.GlobalConstantCase
+    value: UPPER_CASE
+  
