@@ -26,6 +26,11 @@ CheckOptions:
   readability-identifier-naming.InlineNamespaceCase: CamelCase
   readability-identifier-naming.LocalConstantCase: lower_case
   readability-identifier-naming.LocalConstantPointerCase: lower_case
+  readability-identifier-naming.LocalPointerCase: lower_case
+  readability-identifier-naming.LocalVariableCase: lower_case
+  readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
+  readability-identifier-naming.MemberCase: CamelCase
+  readability-identifier-naming.MethodCase
   readability-identifier-naming.
   readability-identifier-naming.NamespaceCase: CamelCase
   readability-identifier-naming.PrivateMemberPrefix: m_
