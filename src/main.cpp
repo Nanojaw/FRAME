@@ -11,7 +11,7 @@ auto main() -> int {
     std::cout << "Current path: " << std::filesystem::current_path() << std::endl;
     return 1;
   }
-  auto parser = modparser::cParser(f);
+  auto parser = Modparser::Parser(f);
   //parser
 
   f.close();

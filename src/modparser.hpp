@@ -6,88 +6,56 @@
 #pragma once
 
 #include "AST.hpp"
+#include "lexer.hpp"
 
 #include <istream>
 #include <map>
 #include <string>
 
-namespace modparser {
-  enum lex_token_type {
-    eof,
-    unknown,
-    instruction,
-    number,
-    module,
-  };
+namespace Modparser {
+  class Parser {
+    Lexer::Lexer m_Lexer;
+    std::unique_ptr<Lexer::LexToken> m_Token;
 
-  class cLexToken {
-  public:
-    lex_token_type Type;
-    std::string Identifier;
-    int Value;
-  };
+    static auto LogError(const std::string& info) -> std::unique_ptr<AST::Expr>
+    {
+        fprintf(stderr, "Parser Error: %s \n", info.c_str());
+        return nullptr;
+    }
 
-  class cLexer {
-    std::istream& _input_stream_;
-    int lastchar;
+    auto ParseInstruction() -> std::unique_ptr<AST::Expr> {
+      if(static_cast<Lexer::InstructionToken>(*m_Token)->)
+    }
 
-  public:
-    explicit cLexer(std::istream& is) : _input_stream_(is), lastchar(_input_stream_.get()) { }
+    auto ParseAdd() -> std::unique_ptr<AST::Expr> {
+      std::vector<std::unique_ptr<AST::Expr>> inst_params;
+      m_Token = m_Lexer.GetNextToken();
 
-    auto GetNextToken() -> cLexToken {
-      auto result = cLexToken();
+      if (m_Token.Identifier != "(") return LogError("Expected opening parenthesis, got \"" + m_Token.Identifier + "\"");
 
-      while (isspace(lastchar)) lastchar = _input_stream_.get();
+      m_Token = m_Lexer.GetNextToken();
 
-      if (isalpha(lastchar)) {
-        result.Identifier = std::to_string(lastchar);
-
-        while (isalnum(lastchar = _input_stream_.get())) result.Identifier += std::to_string(lastchar);
-
-        if (result.Identifier == "mod") {
-          result.Type = module;
-          return result;
+      while (m_Token.Identifier != ")") {
+        if (m_Token.Type == LexTokenType::instruction) {
+          ParseInstruction();
         }
 
-        result.Type = instruction;
-        return result;
+        if (m_Token.Identifier == ",") {
+          continue;
+        }
+
+        if (m_Token.Type != number) return LogError("Invalid argument type; expected number, got " + m_Token.Type);
+            inst_params.push_back(ParseNumber());
       }
 
-      if (isdigit(lastchar)) {
-        result.Type = number;
-
-        std::string numStr = std::to_string(lastchar);
-
-        while (isdigit(lastchar = _input_stream_.get())) numStr += std::to_string(lastchar);
-
-        result.Value = std::stoi(numStr);
-        return result;
-      }
-
-      if (lastchar == EOF) {
-        result.Type = eof;
-        return result;
-      }
-
-      result.Type = unknown;
-      result.Identifier += std::to_string(lastchar);
-      lastchar = _input_stream_.get();
-      return result;
     }
-  };
-
-  class cParser {
-    cLexer _lexer_;
-
-    cLexToken _token;
-
-    const std::map<std::string, int> _instruction_map = {
-      {"add", AST::add}
-    };
-
-    //void NextToken() { token = lexer_.GetToken(); }
 
   public:
-    explicit cParser(std::istream& is) : _lexer_(cLexer(is)), _token{} { }
+    explicit Parser(std::istream& is) : m_Lexer(Lexer::Lexer(is)), m_Token() { }
+
+    // TODO: remake so it parses entire module
+    auto ParseModule() -> std::unique_ptr<AST::Expr> {
+      if (m_Token->Type == Lexer::LexType::instruction) return ParseInstruction();
+    }
   };
-} // namespace modparser
+} // namespace Modparser
