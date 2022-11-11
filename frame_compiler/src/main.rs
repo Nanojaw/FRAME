@@ -1,5 +1,7 @@
 use std::fs;
 
+mod splitter;
+
 use clap::Parser;
 #[derive(Parser)]
 pub struct Cli {
