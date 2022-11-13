@@ -11,5 +11,7 @@ pub struct Cli {
 fn main() {
     let args = Cli::parse();
     let file = fs::read_to_string(&args.path).expect("Could not read file");
-    println!("{}", file)
+    println!("{}", file);
+
+    let block = splitter::split_file(file.as_str());
 }
