@@ -5,7 +5,7 @@ mod splitter;
 use clap::Parser;
 #[derive(Parser)]
 pub struct Cli {
-    pub path: std::path::PathBuf
+    pub path: std::path::PathBuf,
 }
 
 fn main() {
@@ -13,7 +13,12 @@ fn main() {
     let file = fs::read_to_string(&args.path).expect("Could not read file");
     println!("{}", file);
 
-    let block = splitter::split_file(file.as_str());
+    let block = splitter::split_file(
+        file.as_str(),
+        args.path.file_name().unwrap().to_str().unwrap(),
+    );
 
-    println!("{}", "huh");
+    block.unwrap().print(0);
+
+    println!("{}", "finished");
 }
