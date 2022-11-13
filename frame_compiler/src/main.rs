@@ -14,4 +14,6 @@ fn main() {
     println!("{}", file);
 
     let block = splitter::split_file(file.as_str());
+
+    println!("{}", "huh");
 }
