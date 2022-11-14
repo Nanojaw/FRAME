@@ -18,7 +18,7 @@ fn main() {
         args.path.file_name().unwrap().to_str().unwrap(),
     );
 
-    block.unwrap().print(0);
+    block.expect("File was invalid").print(0);
 
     println!("{}", "finished");
 }

@@ -1,137 +1,182 @@
-pub struct StringBlock {
+use std::str::Chars;
+
+pub struct ValueBlock {
     block: String,
-    sub_block: Vec<StringBlock>,
 }
 
-impl StringBlock {
+pub struct InstrBlock {
+    block: String,
+    parameters: Vec<Block>,
+}
+
+pub struct InstrWithBodyBlock {
+    block: String,
+    parameters: Vec<Block>,
+    body: Vec<Block>,
+}
+
+pub enum Block {
+    Value(ValueBlock),
+    Instr(InstrBlock),
+    InstrWithBody(InstrWithBodyBlock),
+}
+
+impl Block {
     pub fn print(&self, indent: i32) {
         let indent_str = (0..indent).map(|_| " ").collect::<String>();
-        println!("{}Block: {} {{", indent_str, self.block);
-        print!("{} SubBlocks: ", indent_str);
-        
-        if self.sub_block.len() == 0 {
-            println!("Empty");
-            return;
-        } else {
-            println!();
-        }
-
-        for i in 0..self.sub_block.len() {
-            self.sub_block[i].print(indent+2)
-        }
-        
-        println!("{}}}", indent_str);
-    }
-}
-
-fn skip_indent(
-    chars: &mut std::str::Chars,
-    advance: bool,
-    curr_char: Option<char>,
-) -> Option<char> {
-    if advance {
-        let mut c = chars.next();
-
-        while c.is_some() && c.unwrap() == ' ' {
-            c = chars.next()
-        }
-
-        c
-    } else {
-        let mut c = curr_char;
-        while c.is_some() && c.unwrap() == ' ' {
-            c = chars.next()
-        }
-
-        c
-    }
-}
-
-fn split_instruction<'a>(
-    chars: &mut std::str::Chars,
-    inst_name: String,
-    current_char: Option<char>,
-) -> StringBlock {
-    let mut block = StringBlock {
-        block: inst_name,
-        sub_block: Vec::new(),
-    };
-
-    let mut c = skip_indent(chars, false, current_char);
-
-    if c.is_some() && c.unwrap() == '(' {
-        while c.is_some() && c.unwrap() != ')' {
-            c = skip_indent(chars, true, None);
-
-            if c.is_some() && c.unwrap().is_alphabetic() {
-                let mut name = String::new();
-
-                while c.is_some() && c.unwrap().is_alphanumeric() {
-                    name.push(c.unwrap());
-                    c = chars.next();
-                }
-
-                // Check if we have encountered an instruction
-                match name.as_str() {
-                    "add" => block
-                        .sub_block
-                        .push(split_instruction(chars, "add".to_string(), c)),
-                    "sub" => block
-                        .sub_block
-                        .push(split_instruction(chars, "sub".to_string(), c)),
-                        _ => panic!("{name} is not implemented yet"),
-                }
-            } else if c.is_some() && c.unwrap().is_digit(10) {
-                let mut digit_str = String::new();
-
-                while c.is_some() && (c.unwrap().is_digit(10) || c.unwrap() == '.') {
-                    digit_str.push(c.unwrap());
-                    c = chars.next();
-                }
-
-                block.sub_block.push(StringBlock {
-                    block: digit_str,
-                    sub_block: Vec::new(),
-                })
+        match self {
+            Block::Value(block) => {
+                println!("{}Block: {}", indent_str, block.block)
             }
-        }
-    }
+            Block::Instr(block) => {
+                println!("{}Block: {}", indent_str, block.block);
+                print!("{}Params: ", indent_str);
 
-    block
+                if block.parameters.len() == 0 {
+                    println!("Empty");
+                    return;
+                } else {
+                    println!();
+                }
+
+                for i in 0..block.parameters.len() {
+                    block.parameters[i].print(indent + 2)
+                }
+            }
+            Block::InstrWithBody(block) => {
+                println!("{}Block: {}", indent_str, block.block);
+                print!("{}Params: ", indent_str);
+
+                if block.parameters.len() == 0 {
+                    println!("Empty");
+                    return;
+                } else {
+                    println!();
+                }
+
+                for i in 0..block.parameters.len() {
+                    block.parameters[i].print(indent + 2)
+                }
+
+                print!("{}Body: ", indent_str);
+
+                if block.body.len() == 0 {
+                    println!("Empty");
+                    return;
+                } else {
+                    println!();
+                }
+
+                for i in 0..block.body.len() {
+                    block.body[i].print(indent + 2)
+                }
+            }
+        };
+    }
 }
 
-pub fn split_file(str: &str, file_name: &str) -> Option<StringBlock> {
-    let mut chars = str.chars();
+fn NextChar(chars: &mut Chars) -> Option<char> {
+    let mut c = chars.next();
 
-    // Every file has a hidden top level module
-    let mut top_mod = StringBlock {
-        block: file_name.to_string(),
-        sub_block: Vec::new(),
-    };
-
-    // Skip indentation
-    let mut c = skip_indent(&mut chars, true, None);
-
-    // Instructions or variables
-    if c.is_some() && c.unwrap().is_alphabetic() {
-        let mut name = String::new();
-
-        while c.is_some() && c.unwrap().is_alphanumeric() {
-            name.push(c.unwrap());
-            c = chars.next();
-        }
-
-        // Check if we have encountered an instruction
-        match name.as_str() {
-            "add" => top_mod
-                .sub_block
-                .push(split_instruction(&mut chars, "add".to_string(), c)),
-            "sub" => top_mod
-                .sub_block
-                .push(split_instruction(&mut chars, "sub".to_string(), c)),
-            _ => panic!("{name} is not implemented yet"),
-        }
+    while c.is_some() && c.unwrap() == ' ' {
+        c = chars.next();
     }
 
-    Some(top_mod)
+    if c.is_some() {
+        return c;
+    }
+    None
+}
+
+fn split_params(chars: &mut Chars) -> Vec<Block> {
+    let mut c = NextChar(chars);
+
+    let mut params: Vec<Block> = Vec::new();
+
+    while c.is_some() && c.unwrap() != ')' {
+        if c.unwrap().is_alphabetic() {
+            let mut alphabetical_type = String::new();
+
+            while c.is_some() && c.unwrap().is_alphanumeric() {
+                alphabetical_type.push(c.unwrap());
+                c = chars.next();
+            }
+
+            match alphabetical_type.as_str() {
+                "add" => params.push(Block::Instr(InstrBlock {
+                    block: "add".to_string(),
+                    parameters: split_params(chars),
+                })),
+                _ => params.push(Block::Value(ValueBlock {
+                    block: alphabetical_type,
+                })),
+            }
+
+            c = NextChar(chars);
+        }
+
+        if c.unwrap().is_digit(10) {
+            let mut number_str = String::new();
+
+            while c.is_some() && (c.unwrap().is_digit(10) || c.unwrap() == '.') {
+                number_str.push(c.unwrap());
+                c = chars.next();
+            }
+
+            params.push(Block::Value(ValueBlock { block: number_str }))
+        }
+
+        if c.unwrap() == ',' {
+            c = NextChar(chars);
+            continue;
+        }
+    }
+    params
+}
+
+pub fn split_file(file_contents: &str, filename: &str) -> Option<Block> {
+    let mut chars = file_contents.chars();
+
+    let mut main_block = InstrWithBodyBlock {
+        block: "fn".to_string(),
+        parameters: vec![Block::Value(ValueBlock {
+            block: "main".to_string(),
+        })],
+        body: Vec::new(),
+    };
+
+    let mut c = NextChar(&mut chars);
+
+    while c.is_some() {
+        let mut identifier = String::new();
+
+        // Instruction encountered
+        if c.unwrap().is_alphabetic() {
+            let mut block: Block;
+
+            // Extract entire instruction identifier
+            while c.is_some() && c.unwrap().is_alphanumeric() {
+                identifier.push(c.unwrap());
+                c = NextChar(&mut chars)
+            }
+
+            // Check what type of instruction we have
+            match identifier.as_str() {
+                "add" => {
+                    block = Block::Instr(InstrBlock {
+                        block: "add".to_string(),
+                        parameters: split_params(&mut chars),
+                    });
+                }
+                _ => {
+                    println!("Unknown instruction \"{identifier}\"");
+                    return None;
+                }
+            }
+
+            main_block.body.push(block);
+        }
+        c = NextChar(&mut chars);
+    }
+    Some(Block::InstrWithBody(main_block))
 }
