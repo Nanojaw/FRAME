@@ -30,7 +30,7 @@ impl Block {
             }
             Block::Instr(block) => {
                 println!("{}Block: {}", indent_str, block.block);
-                print!("{}Params: ", indent_str);
+                print!("{}  Params: ", indent_str);
 
                 if block.parameters.len() == 0 {
                     println!("Empty");
@@ -45,7 +45,7 @@ impl Block {
             }
             Block::InstrWithBody(block) => {
                 println!("{}Block: {}", indent_str, block.block);
-                print!("{}Params: ", indent_str);
+                print!("{}  Params: ", indent_str);
 
                 if block.parameters.len() == 0 {
                     println!("Empty");
@@ -75,10 +75,10 @@ impl Block {
     }
 }
 
-fn NextChar(chars: &mut Chars) -> Option<char> {
+fn next_char(chars: &mut Chars) -> Option<char> {
     let mut c = chars.next();
 
-    while c.is_some() && c.unwrap() == ' ' {
+    while c.is_some() && (c.unwrap() == ' ' || c.unwrap() == '\n')  {
         c = chars.next();
     }
 
@@ -89,7 +89,7 @@ fn NextChar(chars: &mut Chars) -> Option<char> {
 }
 
 fn split_params(chars: &mut Chars) -> Vec<Block> {
-    let mut c = NextChar(chars);
+    let mut c = next_char(chars);
 
     let mut params: Vec<Block> = Vec::new();
 
@@ -107,12 +107,52 @@ fn split_params(chars: &mut Chars) -> Vec<Block> {
                     block: "add".to_string(),
                     parameters: split_params(chars),
                 })),
+
+                "fn" => params.push(Block::Instr(InstrBlock {
+                    block: "fn".to_string(),
+                    parameters: split_params(chars),
+                })),
+
+
+                /* #region Conditionals */
+                "not" => params.push(Block::Instr(InstrBlock {
+                    block: "not".to_string(),
+                    parameters: split_params(chars),
+                })),
+
+                "eq" => params.push(Block::Instr(InstrBlock {
+                    block: "eq".to_string(),
+                    parameters: split_params(chars),
+                })),
+                "neq" => params.push(Block::Instr(InstrBlock {
+                    block: "neq".to_string(),
+                    parameters: split_params(chars),
+                })),
+                "greater" => params.push(Block::Instr(InstrBlock {
+                    block: "greater".to_string(),
+                    parameters: split_params(chars),
+                })),
+                "less" => params.push(Block::Instr(InstrBlock {
+                    block: "less".to_string(),
+                    parameters: split_params(chars),
+                })),
+                
+                "and" => params.push(Block::Instr(InstrBlock {
+                    block: "and".to_string(),
+                    parameters: split_params(chars),
+                })),
+                "or" => params.push(Block::Instr(InstrBlock {
+                    block: "eq".to_string(),
+                    parameters: split_params(chars),
+                })),
+                /* #endregion */
+
                 _ => params.push(Block::Value(ValueBlock {
                     block: alphabetical_type,
                 })),
             }
 
-            c = NextChar(chars);
+            c = next_char(chars);
         }
 
         if c.unwrap().is_digit(10) {
@@ -127,14 +167,67 @@ fn split_params(chars: &mut Chars) -> Vec<Block> {
         }
 
         if c.unwrap() == ',' {
-            c = NextChar(chars);
+            c = next_char(chars);
             continue;
         }
     }
     params
 }
 
-pub fn split_file(file_contents: &str, filename: &str) -> Option<Block> {
+fn split_body(chars: &mut Chars) -> Vec<Block> {
+    let mut blocks: Vec<Block> = Vec::new();
+
+    let mut c = next_char(chars);
+
+    if c.is_some() && c.unwrap() == '{' {
+        c = next_char(chars)
+    }
+    else {
+        // error handling
+    }
+
+    while c.is_some() && c.unwrap() != '}' {
+        let mut identifier = String::new();
+
+        // Instruction encountered
+        if c.unwrap().is_alphabetic() {
+            let block: Block;
+
+            // Extract entire instruction identifier
+            while c.is_some() && c.unwrap().is_alphanumeric() {
+                identifier.push(c.unwrap());
+                c = next_char(chars)
+            }
+
+            // Check what type of instruction we have
+            match identifier.as_str() {
+                "set" => {
+                    block = Block::Instr(InstrBlock {
+                        block: "set".to_string(),
+                        parameters: split_params(chars),
+                    });
+                }
+                "if" => {
+                    block = Block::InstrWithBody(InstrWithBodyBlock {
+                        block: "if".to_string(),
+                        parameters: split_params(chars),
+                        body: split_body(chars),
+                    })
+                }
+                _ => {
+                    println!("Unknown instruction \"{identifier}\"");
+                    return Vec::new();
+                }
+            }
+
+            blocks.push(block);
+        }
+        c = next_char(chars);
+    }
+    blocks
+}
+
+pub fn split_file(file_contents: &str) -> Option<Block> {
     let mut chars = file_contents.chars();
 
     let mut main_block = InstrWithBodyBlock {
@@ -145,28 +238,35 @@ pub fn split_file(file_contents: &str, filename: &str) -> Option<Block> {
         body: Vec::new(),
     };
 
-    let mut c = NextChar(&mut chars);
+    let mut c = next_char(&mut chars);
 
     while c.is_some() {
         let mut identifier = String::new();
 
         // Instruction encountered
         if c.unwrap().is_alphabetic() {
-            let mut block: Block;
+            let block: Block;
 
             // Extract entire instruction identifier
             while c.is_some() && c.unwrap().is_alphanumeric() {
                 identifier.push(c.unwrap());
-                c = NextChar(&mut chars)
+                c = next_char(&mut chars)
             }
 
             // Check what type of instruction we have
             match identifier.as_str() {
-                "add" => {
+                "set" => {
                     block = Block::Instr(InstrBlock {
-                        block: "add".to_string(),
+                        block: "set".to_string(),
                         parameters: split_params(&mut chars),
                     });
+                }
+                "if" => {
+                    block = Block::InstrWithBody(InstrWithBodyBlock {
+                        block: "if".to_string(),
+                        parameters: split_params(&mut chars),
+                        body: split_body(&mut chars),
+                    })
                 }
                 _ => {
                     println!("Unknown instruction \"{identifier}\"");
@@ -176,7 +276,7 @@ pub fn split_file(file_contents: &str, filename: &str) -> Option<Block> {
 
             main_block.body.push(block);
         }
-        c = NextChar(&mut chars);
+        c = next_char(&mut chars);
     }
     Some(Block::InstrWithBody(main_block))
 }
