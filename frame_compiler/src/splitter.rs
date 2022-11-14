@@ -78,7 +78,7 @@ impl Block {
 fn next_char(chars: &mut Chars) -> Option<char> {
     let mut c = chars.next();
 
-    while c.is_some() && (c.unwrap() == ' ' || c.unwrap() == '\n')  {
+    while c.is_some() && c.unwrap().is_whitespace()  {
         c = chars.next();
     }
 
