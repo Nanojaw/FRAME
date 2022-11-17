@@ -1,7 +1,9 @@
-if() {
-    
+fn(fib, [i128, x], i128) {
+    if(less(x, 3)) {
+        return(1)
+    } else {
+        return(add(do(fib, sub(x, 1)), do(fib, sub(x, 2))))
+    }
 }
 
-if([i128, 123]) {
-    
-}
+set(f, 48)

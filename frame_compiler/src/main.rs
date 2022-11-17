@@ -1,6 +1,7 @@
 use std::fs;
 
 mod splitter;
+mod parser;
 
 use clap::Parser;
 #[derive(Parser)]
@@ -13,7 +14,9 @@ fn main() {
     let file = fs::read_to_string(&args.path).expect("Could not read file");
     let block = splitter::split_file(file.as_str());
 
-    block.expect("File was invalid").print(0);
+    block.unwrap().print(0);
+
+    //let parsed_block = block.expect("File was invalid").parse();
 
     println!("{}", "finished");
 }
