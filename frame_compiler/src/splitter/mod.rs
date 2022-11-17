@@ -7,23 +7,23 @@ pub enum CalledFrom {
 }
 
 pub struct ValueBlock {
-    block: String,
+    pub block: String,
 }
 
 pub struct InstrBlock {
-    block: String,
-    parameters: Vec<Block>,
+    pub block: String,
+    pub parameters: Vec<Block>,
 }
 
 pub struct InstrWithBodyBlock {
-    block: String,
-    parameters: Vec<Block>,
-    body: Vec<Block>,
+    pub block: String,
+    pub parameters: Vec<Block>,
+    pub body: Vec<Block>,
 }
 
 pub struct StructureBlock {
-    frame_type: String,
-    value: String,
+    pub frame_type: String,
+    pub value: String,
 }
 
 pub enum Block {
@@ -407,7 +407,7 @@ fn split_params(chars: &mut Chars) -> Vec<Block> {
             return params;
         }
     }
-
+    
     params
 }
 

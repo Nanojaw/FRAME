@@ -14,9 +14,7 @@ fn main() {
     let file = fs::read_to_string(&args.path).expect("Could not read file");
     let block = splitter::split_file(file.as_str());
 
-    block.unwrap().print(0);
-
-    //let parsed_block = block.expect("File was invalid").parse();
+    let parsed_block = block.expect("File was invalid").parse();
 
     println!("{}", "finished");
 }
