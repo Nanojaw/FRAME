@@ -1,9 +1,9 @@
 use std::str::Chars;
 
-pub enum CalledFrom {
-    WithinMain,
-    WithinParam,
-    WithinBody,
+pub enum Context {
+    Main,
+    Parameter,
+    Body,
 }
 
 pub struct ValueBlock {
@@ -128,9 +128,9 @@ impl Block {
     }
 }
 
-fn check_input_type(identifier: &str, location: CalledFrom, chars: &mut Chars) -> Option<Block> {
+fn check_input_type(identifier: &str, location: Context, chars: &mut Chars) -> Option<Block> {
     match location {
-        CalledFrom::WithinMain => match identifier {
+        Context::Main => match identifier {
             // Regular instructions
             "set" => Some(Block::Instr(InstrBlock {
                 block: "set".to_string(),
@@ -167,14 +167,14 @@ fn check_input_type(identifier: &str, location: CalledFrom, chars: &mut Chars) -
                 body: split_body(chars),
             })),
 
-            // Idk lol
+            // Modules
             "mod" => Some(Block::InstrWithBody(InstrWithBodyBlock {
                 block: "mod".to_string(),
                 parameters: split_params(chars),
                 body: split_body(chars),
             })),
 
-            // Function stuff
+            // Function specific things
             "fn" => Some(Block::InstrWithBody(InstrWithBodyBlock {
                 block: "fn".to_string(),
                 parameters: split_params(chars),
@@ -186,19 +186,19 @@ fn check_input_type(identifier: &str, location: CalledFrom, chars: &mut Chars) -
                 parameters: split_params(chars),
             })),
 
-            // Stuff that is not implemented or error ridden
+            // Not recognised or not allowed
             _ => {
                 println!("Unknown instruction in main \"{identifier}\"");
                 return None;
             }
         },
-        CalledFrom::WithinParam => match identifier {
+        Context::Parameter => match identifier {
             "do" => Some(Block::Instr(InstrBlock {
                 block: "do".to_string(),
                 parameters: split_params(chars),
             })),
             
-            // Math stuff
+            // Math operations
             "add" => Some(Block::Instr(InstrBlock {
                 block: "add".to_string(),
                 parameters: split_params(chars),
@@ -255,12 +255,12 @@ fn check_input_type(identifier: &str, location: CalledFrom, chars: &mut Chars) -
                 parameters: split_params(chars),
             })),
 
-            // Variable or litteral
+            // Variable or literal
             _ => Some(Block::Value(ValueBlock {
                 block: identifier.to_string(),
             })),
         },
-        CalledFrom::WithinBody => match identifier {
+        Context::Body => match identifier {
             // Normal instructions
             "set" => Some(Block::Instr(InstrBlock {
                 block: "set".to_string(),
@@ -302,7 +302,7 @@ fn check_input_type(identifier: &str, location: CalledFrom, chars: &mut Chars) -
                 parameters: split_params(chars),
             })),
 
-            // error stuff
+            // Not recognised or not allowed
             _ => {
                 println!("Unknown instruction in body \"{identifier}\"");
                 return None;
@@ -380,7 +380,7 @@ fn split_params(chars: &mut Chars) -> Vec<Block> {
             }
 
             params.push(
-                check_input_type(identifier.as_str(), CalledFrom::WithinParam, chars).unwrap(),
+                check_input_type(identifier.as_str(), Context::Parameter, chars).unwrap(),
             );
 
             if c.unwrap() != ',' && c.unwrap() != ')' {
@@ -435,7 +435,7 @@ fn split_body(chars: &mut Chars) -> Vec<Block> {
                 c = next_char(chars)
             }
 
-            let split_block = check_input_type(identifier.as_str(), CalledFrom::WithinBody, chars);
+            let split_block = check_input_type(identifier.as_str(), Context::Body, chars);
             if split_block.is_some() {
                 block = split_block.unwrap();
             } else {
@@ -476,7 +476,7 @@ pub fn split_file(file_contents: &str) -> Option<Block> {
             }
 
             let split_block =
-                check_input_type(identifier.as_str(), CalledFrom::WithinMain, &mut chars);
+                check_input_type(identifier.as_str(), Context::Main, &mut chars);
             if split_block.is_some() {
                 block = split_block.unwrap();
             } else {
