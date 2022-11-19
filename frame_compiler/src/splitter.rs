@@ -7,14 +7,14 @@ enum Context {
 }
 
 struct Instruction<'a> {
-    name: &'a str,
-    allowed_contexts: Vec<Context>,
+    pub name: &'a str,
+    pub allowed_contexts: Vec<Context>,
 }
 
 struct UnrecognisedCharError {
-    char: Option<char>,
-    line_count: i32,
-    position_in_line: i32,
+    pub char: Option<char>,
+    pub line_count: i32,
+    pub position_in_line: i32,
 }
 
 enum SplitterErrors {
@@ -106,27 +106,27 @@ impl Block {
 }
 
 pub struct Splitter<'a> {
-    chars: Chars<'a>,
-    curr_char: Option<char>,
-    main_block: Block,
-    errors: Vec<SplitterErrors>,
-    line_count: i32,
-    position_in_line: i32,
-    instructions: [Instruction<'a>; 2],
+    pub chars: Chars<'a>,
+    pub curr_char: Option<char>,
+    pub main_block: InstrWithBodyBlock,
+    pub errors: Vec<SplitterErrors>,
+    pub line_count: i32,
+    pub position_in_line: i32,
+    pub instructions: [Instruction<'a>; 2],
 }
 
 impl<'a> Splitter<'a> {
-    fn new(content: &str) -> Self {
+    pub fn new(content: &'a str) -> Self {
         Splitter {
             chars: content.chars(),
             curr_char: None,
-            main_block: Block::InstrWithBody(InstrWithBodyBlock {
+            main_block: InstrWithBodyBlock {
                 block: "fn".to_string(),
                 parameters: vec![Block::Value(ValueBlock {
                     block: "main".to_string(),
                 })],
                 body: Vec::new(),
-            }),
+            },
             errors: Vec::new(),
             line_count: 0,
             position_in_line: 0,
@@ -143,7 +143,7 @@ impl<'a> Splitter<'a> {
         }
     }
 
-    fn next_char(&self, skip: bool) {
+    fn next_char(&mut self, skip: bool) {
         self.curr_char = self.chars.next();
         self.position_in_line += 1;
 
@@ -157,7 +157,11 @@ impl<'a> Splitter<'a> {
         }
     }
 
-    fn split_file(&self) {
+    fn check_instr_type(instr_id: String, call_context: Context) {
+        
+    }
+
+    pub fn split_file(&mut self) {
         self.next_char(true);
 
         while self.curr_char.is_some() {
@@ -169,7 +173,7 @@ impl<'a> Splitter<'a> {
                     self.next_char(false);
                 }
 
-                if self.instructions.contains(Instruction {name: identifier.as_str(), allowed_contexts: Context::Main})
+                self.main_block.body.push(check_instr_type(identifier, Context::Main))
             } else if self.curr_char.unwrap() == '#' {
                 while self.curr_char.is_some() && self.curr_char.unwrap() != '\n' {
                     self.next_char(false)
