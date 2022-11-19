@@ -167,20 +167,28 @@ impl<'a> Splitter<'a> {
         }
     }
 
-    fn check_instr_type(&self, instr_id: String, call_context: Context) -> Option<Block> {
+    fn check_instr_type(&self, instr_id: String, call_context: Context) -> Block {
         if self.instructions.iter().find(|instr| -> bool {
             if instr.name == instr_id.as_str() {
                 return true;
             } else {
                 return false;
             }
-        }).expect("{} is not currently implemented in FRAME").allowed_contexts.contains(&call_context) {
+        }).unwrap_or_else()
+        
+        
+        
+        
+        
+        
+        
+        .allowed_contexts.contains(&call_context) {
             match instr_id {
-                _ => None
+                
             }
         } else {
             self.errors.push(SplitterErrors::UnrecognisedInstrInContext(UnrecognisedInstrError {line_count: self.line_count, position_in_line: self.position_in_line, instr_id: instr_id, call_context: Context::Main }));
-            None
+            
         }
     }
 
