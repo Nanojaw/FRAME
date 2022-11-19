@@ -8,47 +8,55 @@ enum Context {
 }
 
 struct Instruction<'a> {
-    pub name: &'a str,
-    pub allowed_contexts: Vec<Context>,
+    name: &'a str,
+    allowed_contexts: Vec<Context>,
 }
 
-struct UnrecognisedCharError {
-    pub char: Option<char>,
-    pub line_count: i32,
-    pub position_in_line: i32,
+struct UnknownCharError {
+    char: Option<char>,
+    line_count: i32,
+    position_in_line: i32,
 }
 
-struct UnrecognisedInstrError {
-    pub line_count: i32,
-    pub position_in_line: i32,
+struct UnknownInstrError {
+    line_count: i32,
+    position_in_line: i32,
 
-    pub instr_id: String,
-    pub call_context: Context
+    instr_id: String,
+}
+
+pub struct InstrNotAllowedInContextError {
+    line_count: i32,
+    position_in_line: i32,
+
+    instr_id: String,
+    context: Context,
 }
 
 enum SplitterErrors {
-    UnrecognisedChar(UnrecognisedCharError),
-    UnrecognisedInstrInContext(UnrecognisedInstrError)
+    UnknownChar(UnknownCharError),
+    UnknownInstr(UnknownInstrError),
+    InstrNotAllowedInContext(InstrNotAllowedInContextError),
 }
 
 pub struct ValueBlock {
-    pub block: String,
+    block: String,
 }
 
 pub struct InstrBlock {
-    pub block: String,
-    pub parameters: Vec<Block>,
+    block: String,
+    parameters: Vec<Block>,
 }
 
 pub struct InstrWithBodyBlock {
-    pub block: String,
-    pub parameters: Vec<Block>,
-    pub body: Vec<Block>,
+    block: String,
+    parameters: Vec<Block>,
+    body: Vec<Block>,
 }
 
 pub struct StructureBlock {
-    pub frame_type: String,
-    pub value: String,
+    frame_type: String,
+    value: String,
 }
 
 pub enum Block {
@@ -116,13 +124,12 @@ impl Block {
 }
 
 pub struct Splitter<'a> {
-    pub chars: Chars<'a>,
-    pub curr_char: Option<char>,
-    pub main_block: InstrWithBodyBlock,
-    pub errors: Vec<SplitterErrors>,
-    pub line_count: i32,
-    pub position_in_line: i32,
-    pub instructions: [Instruction<'a>; 2],
+    chars: Chars<'a>,
+    curr_char: Option<char>,
+    errors: Vec<SplitterErrors>,
+    line_count: i32,
+    position_in_line: i32,
+    instructions: [Instruction<'a>; 2],
 }
 
 impl<'a> Splitter<'a> {
@@ -130,13 +137,6 @@ impl<'a> Splitter<'a> {
         Splitter {
             chars: content.chars(),
             curr_char: None,
-            main_block: InstrWithBodyBlock {
-                block: "fn".to_string(),
-                parameters: vec![Block::Value(ValueBlock {
-                    block: "main".to_string(),
-                })],
-                body: Vec::new(),
-            },
             errors: Vec::new(),
             line_count: 0,
             position_in_line: 0,
@@ -167,32 +167,100 @@ impl<'a> Splitter<'a> {
         }
     }
 
-    fn check_instr_type(&self, instr_id: String, call_context: Context) -> Block {
-        if self.instructions.iter().find(|instr| -> bool {
+    fn check_instr_type(
+        &mut self,
+        instr_id: String,
+        call_context: Context,
+    ) -> Result<Block, SplitterErrors> {
+        let found_instr = self.instructions.iter().find(|instr| -> bool {
             if instr.name == instr_id.as_str() {
                 return true;
             } else {
                 return false;
             }
-        }).unwrap_or_else()
-        
-        
-        
-        
-        
-        
-        
-        .allowed_contexts.contains(&call_context) {
-            match instr_id {
-                
+        });
+
+        if found_instr.is_some() {
+            if found_instr
+                .unwrap()
+                .allowed_contexts
+                .contains(&call_context)
+            {
+                match instr_id.as_str() {
+                    "set" => Ok(Block::Instr(InstrBlock {
+                        block: instr_id,
+                        parameters: self.split_params()?,
+                    })),
+
+                    _ => panic!("yes"),
+                }
+            } else {
+                let _ = self.split_params();
+
+                Err(SplitterErrors::InstrNotAllowedInContext(
+                    InstrNotAllowedInContextError {
+                        line_count: self.line_count,
+                        position_in_line: self.position_in_line,
+                        instr_id: instr_id,
+                        context: call_context,
+                    },
+                ))
             }
         } else {
-            self.errors.push(SplitterErrors::UnrecognisedInstrInContext(UnrecognisedInstrError {line_count: self.line_count, position_in_line: self.position_in_line, instr_id: instr_id, call_context: Context::Main }));
-            
+            let _ = self.split_params();
+
+            Err(SplitterErrors::UnknownInstr(UnknownInstrError {
+                line_count: self.line_count,
+                position_in_line: self.position_in_line,
+                instr_id: instr_id,
+            }))
         }
     }
 
-    pub fn split_file(&mut self) {
+    fn split_params(&mut self) -> Result<Vec<Block>, SplitterErrors> {
+        let mut params: Vec<Block> = Vec::new();
+
+        self.next_char(true);
+
+        while self.curr_char.is_some() && self.curr_char.unwrap() != ')' {
+            if self.curr_char.unwrap().is_digit(10) || self.curr_char.unwrap() == '-' {
+                let mut number_str = String::new();
+
+                while self.curr_char.is_some() && self.curr_char.unwrap().is_digit(10)
+                    || self.curr_char.unwrap() == '.'
+                {
+                    number_str.push(self.curr_char.unwrap());
+                    self.next_char(false);
+                }
+
+                params.push(Block::Value(ValueBlock { block: number_str }));
+            }
+
+            if self.curr_char.unwrap().is_whitespace() || self.curr_char.unwrap() == ',' {
+                self.next_char(true);
+            } else if self.curr_char.unwrap() == ')' {
+                return Ok(params);
+            } else {
+                return Err(SplitterErrors::UnknownChar(UnknownCharError {
+                    char: self.curr_char,
+                    line_count: self.line_count,
+                    position_in_line: self.position_in_line,
+                }));
+            }
+        }
+
+        Ok(params)
+    }
+
+    pub fn split_file(&mut self) -> Block {
+        let mut main_block = InstrWithBodyBlock {
+            block: "fn".to_string(),
+            parameters: vec![Block::Value(ValueBlock {
+                block: "main".to_string(),
+            })],
+            body: Vec::new(),
+        };
+
         self.next_char(true);
 
         while self.curr_char.is_some() {
@@ -204,21 +272,29 @@ impl<'a> Splitter<'a> {
                     self.next_char(false);
                 }
 
-                self.main_block.body.push(Self::check_instr_type(&self, identifier, Context::Main))
-            }
-            else if self.curr_char.unwrap() == '#' {
+                let block = self.check_instr_type(identifier, Context::Main);
+
+                match block {
+                    Ok(block) => main_block.body.push(block),
+
+                    Err(error) => self.errors.push(error),
+                }
+            } else if self.curr_char.unwrap() == '#' {
                 while self.curr_char.is_some() && self.curr_char.unwrap() != '\n' {
                     self.next_char(false)
                 }
-            }
-            else {
+            } else {
                 self.errors
-                    .push(SplitterErrors::UnrecognisedChar(UnrecognisedCharError {
+                    .push(SplitterErrors::UnknownChar(UnknownCharError {
                         char: self.curr_char,
                         line_count: self.line_count,
                         position_in_line: self.position_in_line,
                     }));
             }
+
+            self.next_char(true);
         }
+
+        Block::InstrWithBody(main_block)
     }
 }

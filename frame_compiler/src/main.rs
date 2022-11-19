@@ -15,9 +15,9 @@ fn main() {
     
     // Create splitter and split file
     let mut splitter = splitter::Splitter::new(&file);
-    splitter.split_file();
+    let main_block = splitter.split_file();
 
-
+    main_block.print(0);
 
 
     //let parsed_block = block.expect("File was invalid").parse();
