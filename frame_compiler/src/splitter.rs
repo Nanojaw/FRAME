@@ -1,5 +1,6 @@
 use std::str::Chars;
 
+#[derive(PartialEq)]
 enum Context {
     Main,
     Parameter,
@@ -157,8 +158,18 @@ impl<'a> Splitter<'a> {
         }
     }
 
-    fn check_instr_type(instr_id: String, call_context: Context) {
-        
+    fn check_instr_type(&self, instr_id: String, call_context: Context) -> Block {
+        if self.instructions.iter().find(|instr| -> bool {
+            if instr.name == instr_id.as_str() {
+                return true;
+            } else {
+                return false;
+            }
+        }).expect("{} is not implemented in language").allowed_contexts.contains(&call_context) {
+
+        } else {
+            
+        }
     }
 
     pub fn split_file(&mut self) {
@@ -173,12 +184,14 @@ impl<'a> Splitter<'a> {
                     self.next_char(false);
                 }
 
-                self.main_block.body.push(check_instr_type(identifier, Context::Main))
-            } else if self.curr_char.unwrap() == '#' {
+                self.main_block.body.push(Self::check_instr_type(identifier, Context::Main))
+            }
+            else if self.curr_char.unwrap() == '#' {
                 while self.curr_char.is_some() && self.curr_char.unwrap() != '\n' {
                     self.next_char(false)
                 }
-            } else {
+            }
+            else {
                 self.errors
                     .push(SplitterErrors::UnrecognisedChar(UnrecognisedCharError {
                         char: self.curr_char,
