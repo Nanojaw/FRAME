@@ -18,8 +18,17 @@ struct UnrecognisedCharError {
     pub position_in_line: i32,
 }
 
+struct UnrecognisedInstrError {
+    pub line_count: i32,
+    pub position_in_line: i32,
+
+    pub instr_id: String,
+    pub call_context: Context
+}
+
 enum SplitterErrors {
     UnrecognisedChar(UnrecognisedCharError),
+    UnrecognisedInstrInContext(UnrecognisedInstrError)
 }
 
 pub struct ValueBlock {
@@ -158,17 +167,20 @@ impl<'a> Splitter<'a> {
         }
     }
 
-    fn check_instr_type(&self, instr_id: String, call_context: Context) -> Block {
+    fn check_instr_type(&self, instr_id: String, call_context: Context) -> Option<Block> {
         if self.instructions.iter().find(|instr| -> bool {
             if instr.name == instr_id.as_str() {
                 return true;
             } else {
                 return false;
             }
-        }).expect("{} is not implemented in language").allowed_contexts.contains(&call_context) {
-
+        }).expect("{} is not currently implemented in FRAME").allowed_contexts.contains(&call_context) {
+            match instr_id {
+                _ => None
+            }
         } else {
-            
+            self.errors.push(SplitterErrors::UnrecognisedInstrInContext(UnrecognisedInstrError {line_count: self.line_count, position_in_line: self.position_in_line, instr_id: instr_id, call_context: Context::Main }));
+            None
         }
     }
 
@@ -184,7 +196,7 @@ impl<'a> Splitter<'a> {
                     self.next_char(false);
                 }
 
-                self.main_block.body.push(Self::check_instr_type(identifier, Context::Main))
+                self.main_block.body.push(Self::check_instr_type(&self, identifier, Context::Main))
             }
             else if self.curr_char.unwrap() == '#' {
                 while self.curr_char.is_some() && self.curr_char.unwrap() != '\n' {
