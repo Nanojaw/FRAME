@@ -1,4 +1,4 @@
-pub enum FrameRetrunType {
+pub enum FrameReturnType {
     Bool,
     Number(NumberType),
     Void,

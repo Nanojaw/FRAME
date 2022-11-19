@@ -1,7 +1,5 @@
-#[path = "InstrTypeDetails.rs"]
-mod InstrTypeDetails;
-
-use crate::FrameReturnType::FrameRetrunType;
+use super::InstrTypeDetails;
+use super::FrameReturnType::FrameReturnType;
 
 pub enum BodiedInstrType {
     Fn(InstrTypeDetails::InstrTypeDetails),
@@ -20,34 +18,34 @@ impl BodiedInstrType {
             "fn" => BodiedInstrType::Fn(InstrTypeDetails::InstrTypeDetails {
                 MinParameters: 3,
                 MaxParameters: 3,
-                ReturnType: FrameRetrunType::Void,
+                ReturnType: FrameReturnType::Void,
             }),
             "iff" => BodiedInstrType::If(InstrTypeDetails::InstrTypeDetails {
                 MinParameters: 1,
                 MaxParameters: 1,
-                ReturnType: FrameRetrunType::Void,
+                ReturnType: FrameReturnType::Void,
             }),
             "else" => BodiedInstrType::Else(InstrTypeDetails::InstrTypeDetails {
                 MinParameters: 0,
                 MaxParameters: 0,
-                ReturnType: FrameRetrunType::Void,
+                ReturnType: FrameReturnType::Void,
             }),
 
             "for" => BodiedInstrType::For(InstrTypeDetails::InstrTypeDetails {
                 MinParameters: 3,
                 MaxParameters: 3,
-                ReturnType: FrameRetrunType::Void,
+                ReturnType: FrameReturnType::Void,
             }),
             "while" => BodiedInstrType::While(InstrTypeDetails::InstrTypeDetails {
                 MinParameters: 1,
                 MaxParameters: 1,
-                ReturnType: FrameRetrunType::Void,
+                ReturnType: FrameReturnType::Void,
             }),
 
             "mod" => BodiedInstrType::Mod(InstrTypeDetails::InstrTypeDetails {
                 MinParameters: 1,
                 MaxParameters: 1,
-                ReturnType: FrameRetrunType::Void,
+                ReturnType: FrameReturnType::Void,
             }),
         }
     }

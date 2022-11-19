@@ -1,16 +1,15 @@
 use crate::splitter::Block;
 
-#[path = "ProcessedBlock.rs"]
 mod ProcessedBlock;
-
-#[path = "BodiedInstrType.rs"]
+mod FrameReturnType;
 mod BodiedInstrType;
+mod InstrTypeDetails;
 
 impl Block {
     pub fn parse(&self) -> Option<ProcessedBlock::ProcessedBlock> {
         match self {
             Block::InstrWithBody(block) => {
-                let InstrWithBodyType = BodiedInstrType::BodiedInstrType::which(block.block);
+                let InstrWithBodyType = BodiedInstrType::BodiedInstrType::which();
             }
         }
         None
