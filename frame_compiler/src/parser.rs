@@ -9,7 +9,8 @@ impl Block {
     pub fn parse(&self) -> Option<ProcessedBlock::ProcessedBlock> {
         match self {
             Block::InstrWithBody(block) => {
-                let InstrWithBodyType = BodiedInstrType::BodiedInstrType::which();
+                let InstrWithBodyType = BodiedInstrType::BodiedInstrType::which(&block.block);
+                
             }
         }
         None

@@ -13,14 +13,14 @@ pub enum BodiedInstrType {
 }
 
 impl BodiedInstrType {
-    pub fn which(name: String) -> BodiedInstrType {
-        match name.as_str() {
+    pub fn which(name: &str) -> BodiedInstrType {
+        match name {
             "fn" => BodiedInstrType::Fn(InstrTypeDetails::InstrTypeDetails {
                 MinParameters: 3,
                 MaxParameters: 3,
                 ReturnType: FrameReturnType::Void,
             }),
-            "iff" => BodiedInstrType::If(InstrTypeDetails::InstrTypeDetails {
+            "if" => BodiedInstrType::If(InstrTypeDetails::InstrTypeDetails {
                 MinParameters: 1,
                 MaxParameters: 1,
                 ReturnType: FrameReturnType::Void,
@@ -47,6 +47,9 @@ impl BodiedInstrType {
                 MaxParameters: 1,
                 ReturnType: FrameReturnType::Void,
             }),
+            _ => {
+                eprintln!("Parser error: Instruction with body not recognised");
+            }
         }
     }
 }
