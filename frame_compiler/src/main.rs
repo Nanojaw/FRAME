@@ -2,6 +2,7 @@ use std::fs;
 
 mod splitter;
 mod parser;
+mod FrameReturnType;
 
 use clap::Parser;
 #[derive(Parser)]
