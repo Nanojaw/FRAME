@@ -7,13 +7,23 @@ enum Context {
     Body,
 }
 
+impl std::fmt::Display for Context {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Context::Main => write!(f, "Main"),
+            Context::Parameter => write!(f, "Parameter"),
+            Context::Body => write!(f, "Body"),
+        }
+    }
+}
+
 struct Instruction<'a> {
     name: &'a str,
     allowed_contexts: Vec<Context>,
 }
 
 struct UnknownCharError {
-    char: Option<char>,
+    char: char,
     line_count: i32,
     position_in_line: i32,
 }
@@ -195,25 +205,29 @@ impl<'a> Splitter<'a> {
                     _ => panic!("yes"),
                 }
             } else {
-                let _ = self.split_params();
-
-                Err(SplitterErrors::InstrNotAllowedInContext(
+                let error = Err(SplitterErrors::InstrNotAllowedInContext(
                     InstrNotAllowedInContextError {
                         line_count: self.line_count,
                         position_in_line: self.position_in_line,
                         instr_id: instr_id,
                         context: call_context,
-                    },
-                ))
+                    }
+                ));
+
+                let _ = self.split_params();
+
+                error
             }
         } else {
-            let _ = self.split_params();
-
-            Err(SplitterErrors::UnknownInstr(UnknownInstrError {
+            let error = Err(SplitterErrors::UnknownInstr(UnknownInstrError {
                 line_count: self.line_count,
                 position_in_line: self.position_in_line,
                 instr_id: instr_id,
-            }))
+            }));
+
+            let _ = self.split_params();
+
+            error
         }
     }
 
@@ -242,7 +256,7 @@ impl<'a> Splitter<'a> {
                 return Ok(params);
             } else {
                 return Err(SplitterErrors::UnknownChar(UnknownCharError {
-                    char: self.curr_char,
+                    char: self.curr_char.unwrap(),
                     line_count: self.line_count,
                     position_in_line: self.position_in_line,
                 }));
@@ -286,7 +300,7 @@ impl<'a> Splitter<'a> {
             } else {
                 self.errors
                     .push(SplitterErrors::UnknownChar(UnknownCharError {
-                        char: self.curr_char,
+                        char: self.curr_char.unwrap(),
                         line_count: self.line_count,
                         position_in_line: self.position_in_line,
                     }));
@@ -296,5 +310,21 @@ impl<'a> Splitter<'a> {
         }
 
         Block::InstrWithBody(main_block)
+    }
+
+    pub fn print_errors(&self) {
+        for error in self.errors.iter() {
+            match error {
+                SplitterErrors::UnknownChar(info) => {
+                    println!("Unknown character: {} at line {}, character number {}", info.char, info.line_count, info.position_in_line)
+                },
+                SplitterErrors::UnknownInstr(info) => {
+                    println!("Unknown instruction: {} at line {}, character number {}", info.instr_id, info.line_count, info.position_in_line)
+                },
+                SplitterErrors::InstrNotAllowedInContext(info) => {
+                    println!("Instruction {} is not allowed in {}: at line {}, character number {}", info.instr_id, info.context, info.line_count, info.position_in_line)
+                },
+            }
+        }
     }
 }

@@ -19,6 +19,8 @@ fn main() {
 
     main_block.print(0);
 
+    splitter.print_errors();
+
 
     //let parsed_block = block.expect("File was invalid").parse();
 
