@@ -1,2 +1,3 @@
 .vscode/
+.fleet/
 frame_compiler/target/

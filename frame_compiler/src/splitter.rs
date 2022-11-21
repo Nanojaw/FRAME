@@ -35,7 +35,7 @@ struct UnknownInstrError {
     instr_id: String,
 }
 
-pub struct InstrNotAllowedInContextError {
+struct InstrNotAllowedInContextError {
     line_count: i32,
     position_in_line: i32,
 
@@ -43,10 +43,25 @@ pub struct InstrNotAllowedInContextError {
     context: Context,
 }
 
+struct UnexpectedEOFError {
+    line_count: i32,
+    position_in_line: i32,
+}
+
+struct UnexpectedCharError {
+    line_count: i32,
+    position_in_line: i32,
+
+    char: char,
+    expected: String, // Information about what was expected
+}
+
 enum SplitterErrors {
     UnknownChar(UnknownCharError),
     UnknownInstr(UnknownInstrError),
     InstrNotAllowedInContext(InstrNotAllowedInContextError),
+    UnexpectedEOF(UnexpectedEOFError),
+    UnexpectedChar(UnexpectedCharError),
 }
 
 pub struct ValueBlock {
@@ -64,9 +79,14 @@ pub struct InstrWithBodyBlock {
     body: Vec<Block>,
 }
 
-pub struct StructureBlock {
+pub struct StructureEntry {
+    var_name: String,
     frame_type: String,
-    value: String,
+    value: Option<Block>,
+}
+
+pub struct StructureBlock {
+    entries: Vec<StructureEntry>,
 }
 
 pub enum Block {
@@ -82,8 +102,16 @@ impl Block {
         match self {
             Block::Structure(block) => {
                 println!("{}Block: {}", indent_str, "structure");
-                println!("{}  Type: {}", indent_str, block.frame_type);
-                println!("{}  Value: {}", indent_str, block.value);
+                for entry in block.entries.iter() {
+                    println!("{}  Variable: {}", indent_str, entry.var_name);
+                    println!("{}  Type: {}", indent_str, entry.frame_type);
+                    if entry.value.is_some() {
+                        println!("{} Value: ", indent_str);
+                        entry.value.as_ref().unwrap().print(indent + 2)
+                    } else {
+                        println!("{} Value: Empty", indent_str);
+                    }
+                }
             }
             Block::Value(block) => {
                 println!("{}Block: {}", indent_str, block.block)
@@ -135,7 +163,7 @@ impl Block {
 
 pub struct Splitter<'a> {
     chars: Chars<'a>,
-    curr_char: Option<char>,
+    curr_char: char,
     errors: Vec<SplitterErrors>,
     line_count: i32,
     position_in_line: i32,
@@ -146,7 +174,7 @@ impl<'a> Splitter<'a> {
     pub fn new(content: &'a str) -> Self {
         Splitter {
             chars: content.chars(),
-            curr_char: None,
+            curr_char: ' ',
             errors: Vec::new(),
             line_count: 0,
             position_in_line: 0,
@@ -163,18 +191,32 @@ impl<'a> Splitter<'a> {
         }
     }
 
-    fn next_char(&mut self, skip: bool) {
-        self.curr_char = self.chars.next();
+    fn next_char(&mut self, skip: bool, allow_eof: bool) -> Result<Option<char>, SplitterErrors> {
+        let mut c = self.chars.next();
         self.position_in_line += 1;
 
-        while skip && self.curr_char.is_some() && self.curr_char.unwrap().is_whitespace() {
-            if self.curr_char.unwrap() == '\n' {
+        while skip && c.is_some() && c.unwrap().is_whitespace() {
+            if c.unwrap() == '\n' {
                 self.position_in_line = 0;
                 self.line_count += 1;
             }
-            self.curr_char = self.chars.next();
+            c = self.chars.next();
             self.position_in_line += 1;
         }
+
+        if allow_eof {
+            return Ok(c);
+        }
+
+        if c.is_none() {
+            return Err(SplitterErrors::UnexpectedEOF(UnexpectedEOFError {
+                line_count: self.line_count,
+                position_in_line: self.position_in_line,
+            }));
+        }
+
+        self.curr_char = c.unwrap();
+        Ok(None)
     }
 
     fn check_instr_type(
@@ -211,7 +253,7 @@ impl<'a> Splitter<'a> {
                         position_in_line: self.position_in_line,
                         instr_id: instr_id,
                         context: call_context,
-                    }
+                    },
                 ));
 
                 let _ = self.split_params();
@@ -231,32 +273,150 @@ impl<'a> Splitter<'a> {
         }
     }
 
+    fn split_value(&mut self) -> Result<Block, SplitterErrors> {
+        // Number handling
+        if self.curr_char.is_digit(10) || self.curr_char == '-' {
+            let mut number_str = String::new();
+
+            while self.curr_char.is_digit(10) || self.curr_char == '.' {
+                number_str.push(self.curr_char);
+                self.next_char(false, false)?;
+            }
+
+            return Ok(Block::Value(ValueBlock { block: number_str }));
+        }
+        // Structure handling
+        else if self.curr_char == '[' {
+            return Ok(Block::Structure(self.split_structure()?));
+        }
+        /*
+        else if self.curr_char.is_alphabetic() {
+
+        } */
+        else {
+            return Err(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+                line_count: self.line_count,
+                position_in_line: self.position_in_line,
+                char: self.curr_char,
+                expected: "Expected a value".to_string(),
+            }));
+        }
+    }
+
+    fn split_structure(&mut self) -> Result<StructureBlock, SplitterErrors> {
+        let mut structure = StructureBlock {
+            entries: Vec::new(),
+        };
+
+        self.next_char(true, false)?;
+
+        while self.curr_char != ']' {
+            // Check if the first char is valid
+            if !self.curr_char.is_alphabetic() {
+                return Err(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+                    line_count: self.line_count,
+                    position_in_line: self.position_in_line,
+                    char: self.curr_char,
+                    expected: "Expected alphabetical character".to_string(),
+                }));
+            }
+
+            // If so, extract the variable name
+            let mut var_name = String::new();
+            while self.curr_char.is_alphanumeric() {
+                var_name.push(self.curr_char);
+                self.next_char(false, false)?;
+            }
+
+            // Skip whitespace before colon
+            if self.curr_char.is_whitespace() {
+                self.next_char(true, false)?;
+            }
+
+            // The next character has to be a colon
+            if self.curr_char != ':' {
+                return Err(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+                    line_count: self.line_count,
+                    position_in_line: self.position_in_line,
+                    char: self.curr_char,
+                    expected: "Expected :".to_string(),
+                }));
+            }
+
+            // Skip whitespace before type
+            if self.curr_char.is_whitespace() {
+                self.next_char(true, false)?;
+            }
+
+            // Types always start with a alphabetical character
+            if !self.curr_char.is_alphabetic() {
+                return Err(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+                    line_count: self.line_count,
+                    position_in_line: self.position_in_line,
+                    char: self.curr_char,
+                    expected: "Expected alphabetical character".to_string(),
+                }));
+            }
+
+            // Extract the type
+            let mut frame_type = String::new();
+            while self.curr_char.is_alphanumeric() {
+                frame_type.push(self.curr_char);
+                self.next_char(false, false)?;
+            }
+
+            if self.curr_char.is_whitespace() {
+                self.next_char(true, false)?;
+            }
+
+            // The equals is optional
+            let mut value: Option<Block> = None;
+            if self.curr_char == '=' {
+                if self.curr_char.is_whitespace() {
+                    self.next_char(true, false)?;
+                }
+
+                value = Some(self.split_value()?);
+            }
+
+            // Skip whitespace before comma or closing square bracket
+            if self.curr_char.is_whitespace() {
+                self.next_char(true, false)?;
+            }
+
+            if self.curr_char != ',' || self.curr_char != ']' {
+                return Err(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+                    line_count: self.line_count,
+                    position_in_line: self.position_in_line,
+                    char: self.curr_char,
+                    expected: "Expected comma or ]".to_string(),
+                }));
+            }
+
+            structure.entries.push(StructureEntry {
+                var_name,
+                frame_type,
+                value,
+            })
+        }
+        Ok(structure)
+    }
+
     fn split_params(&mut self) -> Result<Vec<Block>, SplitterErrors> {
         let mut params: Vec<Block> = Vec::new();
 
-        self.next_char(true);
+        self.next_char(true, false)?;
 
-        while self.curr_char.is_some() && self.curr_char.unwrap() != ')' {
-            if self.curr_char.unwrap().is_digit(10) || self.curr_char.unwrap() == '-' {
-                let mut number_str = String::new();
+        while self.curr_char != ')' {
+            params.push(self.split_value()?);
 
-                while self.curr_char.is_some() && self.curr_char.unwrap().is_digit(10)
-                    || self.curr_char.unwrap() == '.'
-                {
-                    number_str.push(self.curr_char.unwrap());
-                    self.next_char(false);
-                }
-
-                params.push(Block::Value(ValueBlock { block: number_str }));
-            }
-
-            if self.curr_char.unwrap().is_whitespace() || self.curr_char.unwrap() == ',' {
-                self.next_char(true);
-            } else if self.curr_char.unwrap() == ')' {
+            if self.curr_char.is_whitespace() || self.curr_char == ',' {
+                self.next_char(true, false)?;
+            } else if self.curr_char == ')' {
                 return Ok(params);
             } else {
                 return Err(SplitterErrors::UnknownChar(UnknownCharError {
-                    char: self.curr_char.unwrap(),
+                    char: self.curr_char,
                     line_count: self.line_count,
                     position_in_line: self.position_in_line,
                 }));
@@ -275,15 +435,21 @@ impl<'a> Splitter<'a> {
             body: Vec::new(),
         };
 
-        self.next_char(true);
+        let mut c = self.next_char(true, true).unwrap_or_else(|err| {
+            self.errors.push(err);
+            return None;
+        });
 
-        while self.curr_char.is_some() {
-            if self.curr_char.unwrap().is_alphabetic() {
+        while c.is_some() {
+            if c.unwrap().is_alphabetic() {
                 let mut identifier = String::new();
 
-                while self.curr_char.is_some() && self.curr_char.unwrap().is_alphanumeric() {
-                    identifier.push(self.curr_char.unwrap());
-                    self.next_char(false);
+                while c.is_some() && c.unwrap().is_alphanumeric() {
+                    identifier.push(c.unwrap());
+                    c = self.next_char(false, true).unwrap_or_else(|err| {
+                        self.errors.push(err);
+                        return None;
+                    });
                 }
 
                 let block = self.check_instr_type(identifier, Context::Main);
@@ -293,20 +459,26 @@ impl<'a> Splitter<'a> {
 
                     Err(error) => self.errors.push(error),
                 }
-            } else if self.curr_char.unwrap() == '#' {
-                while self.curr_char.is_some() && self.curr_char.unwrap() != '\n' {
-                    self.next_char(false)
+            } else if c.unwrap() == '#' {
+                while c.is_some() && c.unwrap() != '\n' {
+                    c = self.next_char(false, true).unwrap_or_else(|err| {
+                        self.errors.push(err);
+                        return None;
+                    });
                 }
             } else {
                 self.errors
                     .push(SplitterErrors::UnknownChar(UnknownCharError {
-                        char: self.curr_char.unwrap(),
+                        char: c.unwrap(),
                         line_count: self.line_count,
                         position_in_line: self.position_in_line,
                     }));
             }
 
-            self.next_char(true);
+            c = self.next_char(true, true).unwrap_or_else(|err| {
+                self.errors.push(err);
+                return None;
+            });
         }
 
         Block::InstrWithBody(main_block)
@@ -315,15 +487,28 @@ impl<'a> Splitter<'a> {
     pub fn print_errors(&self) {
         for error in self.errors.iter() {
             match error {
-                SplitterErrors::UnknownChar(info) => {
-                    println!("Unknown character: {} at line {}, character number {}", info.char, info.line_count, info.position_in_line)
-                },
-                SplitterErrors::UnknownInstr(info) => {
-                    println!("Unknown instruction: {} at line {}, character number {}", info.instr_id, info.line_count, info.position_in_line)
-                },
-                SplitterErrors::InstrNotAllowedInContext(info) => {
-                    println!("Instruction {} is not allowed in {}: at line {}, character number {}", info.instr_id, info.context, info.line_count, info.position_in_line)
-                },
+                SplitterErrors::UnknownChar(info) => println!(
+                    "Unknown character: {} on line {}  at character {}",
+                    info.char, info.line_count, info.position_in_line
+                ),
+
+                SplitterErrors::UnknownInstr(info) => println!(
+                    "Unknown instruction: {} on line {} at character {}",
+                    info.instr_id, info.line_count, info.position_in_line
+                ),
+
+                SplitterErrors::InstrNotAllowedInContext(info) => println!(
+                    "Instruction {} is not allowed in {}: on line {} at character {}",
+                    info.instr_id, info.context, info.line_count, info.position_in_line
+                ),
+                SplitterErrors::UnexpectedEOF(info) => println!(
+                    "Unexpected End Of File on line {} at character {}",
+                    info.line_count, info.position_in_line
+                ),
+                SplitterErrors::UnexpectedChar(info) => println!(
+                    "Unexpected character {} on line {} at character {}. {}",
+                    info.char, info.line_count, info.position_in_line, info.expected
+                ),
             }
         }
     }
