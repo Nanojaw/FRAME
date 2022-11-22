@@ -3,7 +3,7 @@ use std::str::Chars;
 #[derive(PartialEq)]
 enum Context {
     Main,
-    Parameter,
+    ParameterOrStructure,
     Body,
 }
 
@@ -11,7 +11,7 @@ impl std::fmt::Display for Context {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Context::Main => write!(f, "Main"),
-            Context::Parameter => write!(f, "Parameter"),
+            Context::ParameterOrStructure => write!(f, "Parameter/Structure"),
             Context::Body => write!(f, "Body"),
         }
     }
@@ -185,7 +185,7 @@ impl<'a> Splitter<'a> {
                 },
                 Instruction {
                     name: "add",
-                    allowed_contexts: vec![Context::Parameter],
+                    allowed_contexts: vec![Context::ParameterOrStructure],
                 },
             ],
         }
@@ -244,7 +244,12 @@ impl<'a> Splitter<'a> {
                         parameters: self.split_params()?,
                     })),
 
-                    _ => panic!("yes"),
+                    "add" => Ok(Block::Instr(InstrBlock {
+                        block: instr_id,
+                        parameters: self.split_params()?,
+                    })),
+                    
+                    _ => panic!("lel")
                 }
             } else {
                 let error = Err(SplitterErrors::InstrNotAllowedInContext(
@@ -267,16 +272,38 @@ impl<'a> Splitter<'a> {
                 instr_id: instr_id,
             }));
 
-            let _ = self.split_params();
-
             error
         }
     }
 
     fn split_value(&mut self) -> Result<Block, SplitterErrors> {
+        // Variable / instruction handling
+        if self.curr_char.is_alphabetic() {
+            let mut identifier = String::new();
+
+            while self.curr_char.is_alphabetic() {
+                identifier.push(self.curr_char);
+                self.next_char(false, false)?;
+            }
+
+            let split = self.check_instr_type(identifier.clone(), Context::ParameterOrStructure);
+
+            if split.is_ok() {
+                self.next_char(false, false)?;
+                return split;
+            }
+            else {
+                return Ok(Block::Value(ValueBlock { block: identifier }));
+            }
+        }
         // Number handling
-        if self.curr_char.is_digit(10) || self.curr_char == '-' {
+        else if self.curr_char.is_digit(10) || self.curr_char == '-' {
             let mut number_str = String::new();
+
+            if self.curr_char == '-' {
+                number_str.push(self.curr_char);
+                self.next_char(false, false);
+            }
 
             while self.curr_char.is_digit(10) || self.curr_char == '.' {
                 number_str.push(self.curr_char);
@@ -405,15 +432,20 @@ impl<'a> Splitter<'a> {
     fn split_params(&mut self) -> Result<Vec<Block>, SplitterErrors> {
         let mut params: Vec<Block> = Vec::new();
 
-        self.next_char(true, false)?;
-
         while self.curr_char != ')' {
+            self.next_char(true, false)?;
+            
             params.push(self.split_value()?);
 
-            if self.curr_char.is_whitespace() || self.curr_char == ',' {
+            if self.curr_char == ',' {
+                continue;
+            }
+            else if self.curr_char == ' ' {
                 self.next_char(true, false)?;
-            } else if self.curr_char == ')' {
+            }
+            else if self.curr_char == ')' {
                 return Ok(params);
+                
             } else {
                 return Err(SplitterErrors::UnknownChar(UnknownCharError {
                     char: self.curr_char,
@@ -455,18 +487,22 @@ impl<'a> Splitter<'a> {
                 let block = self.check_instr_type(identifier, Context::Main);
 
                 match block {
-                    Ok(block) => main_block.body.push(block),
+                    Ok(block) => {
+                        main_block.body.push(block);
+                    }
 
                     Err(error) => self.errors.push(error),
                 }
-            } else if c.unwrap() == '#' {
+            }
+            else if c.unwrap() == '#' {
                 while c.is_some() && c.unwrap() != '\n' {
                     c = self.next_char(false, true).unwrap_or_else(|err| {
                         self.errors.push(err);
                         return None;
                     });
                 }
-            } else {
+            }
+            else {
                 self.errors
                     .push(SplitterErrors::UnknownChar(UnknownCharError {
                         char: c.unwrap(),
