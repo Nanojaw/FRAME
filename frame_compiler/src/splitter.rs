@@ -222,7 +222,7 @@ impl<'a> Splitter<'a> {
         }
 
         self.curr_char = c.unwrap();
-        Ok(None)
+        Ok(c)
     }
 
     fn check_instr_type(
@@ -318,8 +318,7 @@ impl<'a> Splitter<'a> {
         // Structure handling
         else if self.curr_char == '[' {
             return Ok(Block::Structure(self.split_structure()?));
-        }
-        else {
+        } else {
             return Err(SplitterErrors::UnexpectedChar(UnexpectedCharError {
                 line_count: self.line_count,
                 position_in_line: self.position_in_line,
@@ -339,12 +338,27 @@ impl<'a> Splitter<'a> {
 
             // Check if the first char is valid
             if !self.curr_char.is_alphabetic() {
-                return Err(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+                self.errors.push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
                     line_count: self.line_count,
                     position_in_line: self.position_in_line,
                     char: self.curr_char,
                     expected: "Expected alphabetical character".to_string(),
                 }));
+
+                while !(self.curr_char == ':' || self.curr_char == ',') {
+                    self.errors.push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+                        line_count: self.line_count,
+                        position_in_line: self.position_in_line,
+                        char: self.curr_char,
+                        expected: "Expected alphabetical character".to_string(),
+                    }));
+
+                    self.next_char(true, false)?;
+                }
+
+                if self.curr_char == ',' {
+                    continue;
+                }
             }
 
             // If so, extract the variable name
@@ -360,13 +374,15 @@ impl<'a> Splitter<'a> {
             }
 
             // The next character has to be a colon
-            if self.curr_char != ':' {
-                return Err(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+            while self.curr_char != ':' {
+                self.errors.push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
                     line_count: self.line_count,
                     position_in_line: self.position_in_line,
                     char: self.curr_char,
                     expected: "Expected :".to_string(),
                 }));
+
+                self.next_char(true, false)?;
             }
 
             self.next_char(false, false)?;
@@ -421,16 +437,20 @@ impl<'a> Splitter<'a> {
             } else if self.curr_char == ']' {
                 self.next_char(false, false)?;
                 return Ok(structure);
-            } else if self.curr_char != ',' || self.curr_char != ']' {
-                return Err(SplitterErrors::UnexpectedChar(UnexpectedCharError {
-                    line_count: self.line_count,
-                    position_in_line: self.position_in_line,
-                    char: self.curr_char,
-                    expected: "Expected comma or ]".to_string(),
-                }));
+            } else {
+                while !(self.curr_char == ',' || self.curr_char == ']') {
+                    self.errors.push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+                        line_count: self.line_count,
+                        position_in_line: self.position_in_line,
+                        char: self.curr_char,
+                        expected: "Expected comma or ]".to_string(),
+                    }));
+
+                    self.next_char(true, false)?;
+                    }
+                }
             }
 
-        }
         Ok(structure)
     }
 
@@ -438,22 +458,38 @@ impl<'a> Splitter<'a> {
         let mut params: Vec<Block> = Vec::new();
 
         while self.curr_char != ')' {
-            self.next_char(true, false)?;
+            self.next_char(true, false)?; 
 
-            params.push(self.split_value()?);
+            if self.curr_char == ')' {
+                return Ok(params);
+            }
 
+            let res = self.split_value();
+
+            match res {
+                Ok(res) => params.push(res),
+                Err(error) => {
+                    self.errors.push(error);
+                    continue;
+                }
+            }
+
+            if self.curr_char.is_whitespace() {
+                self.next_char(true, false)?;
+            }
             if self.curr_char == ',' {
                 continue;
-            } else if self.curr_char == ' ' {
-                self.next_char(true, false)?;
-            } else if self.curr_char == ')' {
+            }
+            else if self.curr_char == ')' {
                 return Ok(params);
-            } else {
-                return Err(SplitterErrors::UnknownChar(UnknownCharError {
-                    char: self.curr_char,
-                    line_count: self.line_count,
-                    position_in_line: self.position_in_line,
-                }));
+            }
+            else {
+                self.errors
+                    .push(SplitterErrors::UnknownChar(UnknownCharError {
+                        char: self.curr_char,
+                        line_count: self.line_count,
+                        position_in_line: self.position_in_line,
+                    }));
             }
         }
 
@@ -480,21 +516,17 @@ impl<'a> Splitter<'a> {
 
                 while c.is_some() && c.unwrap().is_alphanumeric() {
                     identifier.push(c.unwrap());
-                    c = self.next_char(false, true).unwrap_or_else(|err| {
+                    c = self.next_char(false, false).unwrap_or_else(|err| {
                         self.errors.push(err);
                         return None;
                     });
                 }
-
-                self.curr_char = c.unwrap();
 
                 let block = self.check_instr_type(identifier, Context::Main);
 
                 if block.is_ok() {
                     main_block.body.push(block.unwrap())
                 } else if block.is_err() {
-                    let _ = self.split_params();
-
                     self.errors.push(block.err().unwrap())
                 }
 
@@ -509,14 +541,18 @@ impl<'a> Splitter<'a> {
                         return None;
                     });
                 }
-            }
-            else {
+            } else {
                 self.errors
                     .push(SplitterErrors::UnknownChar(UnknownCharError {
                         char: c.unwrap(),
                         line_count: self.line_count,
                         position_in_line: self.position_in_line,
                     }));
+
+                c = self.next_char(true, true).unwrap_or_else(|err| {
+                    self.errors.push(err);
+                    return None;
+                });
             }
         }
 

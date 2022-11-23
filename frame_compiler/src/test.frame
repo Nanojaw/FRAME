@@ -1,1 +1,1 @@
-set(tmp, [sub: struct = add([lhs: i32 = 5], [rhs: i64 = 6])])
+set(a, [var:a i32 .  . ,  . , = 123])
