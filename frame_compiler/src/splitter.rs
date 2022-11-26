@@ -46,6 +46,13 @@ struct InstrNotAllowedInContextError {
     context: Context,
 }
 
+struct InstrNotImplementedError {
+    line_count: i32,
+    position_in_line: i32,
+
+    instr_id: String,
+}
+
 #[derive(Debug)]
 struct UnexpectedEOFError {
     line_count: i32,
@@ -61,11 +68,12 @@ struct UnexpectedCharError {
     expected: String, // Information about what was expected
 }
 
-#[derive(Debug)]
+//#[derive(Debug)]
 enum SplitterErrors {
     UnknownChar(UnknownCharError),
     UnknownInstr(UnknownInstrError),
     InstrNotAllowedInContext(InstrNotAllowedInContextError),
+    InstrNotImplemented(InstrNotImplementedError),
     UnexpectedEOF(UnexpectedEOFError),
     UnexpectedChar(UnexpectedCharError),
 }
@@ -173,7 +181,7 @@ pub struct Splitter<'a> {
     errors: Vec<SplitterErrors>,
     line_count: i32,
     position_in_line: i32,
-    instructions: [Instruction<'a>; 2],
+    instructions: [Instruction<'a>; 7],
 }
 
 impl<'a> Splitter<'a> {
@@ -189,8 +197,29 @@ impl<'a> Splitter<'a> {
                     name: "set",
                     allowed_contexts: vec![Context::Main, Context::Body],
                 },
+                // Arithmetic
                 Instruction {
                     name: "add",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
+                },
+                Instruction {
+                    name: "sub",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
+                },
+                Instruction {
+                    name: "mul",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
+                },
+                Instruction {
+                    name: "div",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
+                },
+                Instruction {
+                    name: "pow",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
+                },
+                Instruction {
+                    name: "rot",
                     allowed_contexts: vec![Context::ParameterOrStructure],
                 },
             ],
@@ -250,12 +279,42 @@ impl<'a> Splitter<'a> {
                         parameters: self.split_params()?,
                     })),
 
+                    // Arithmetic
                     "add" => Ok(Block::Instr(InstrBlock {
                         block: instr_id,
                         parameters: self.split_params()?,
                     })),
+                    "sub" => Ok(Block::Instr(InstrBlock {
+                        block: instr_id,
+                        parameters: self.split_params()?,
+                    })),
+                    "mul" => Ok(Block::Instr(InstrBlock {
+                        block: instr_id,
+                        parameters: self.split_params()?,
+                    })),
+                    "div" => Ok(Block::Instr(InstrBlock {
+                        block: instr_id,
+                        parameters: self.split_params()?,
+                    })),
+                    "pow" => Ok(Block::Instr(InstrBlock {
+                        block: instr_id,
+                        parameters: self.split_params()?,
+                    })),
+                    "rot" => Ok(Block::Instr(InstrBlock {
+                        block: instr_id,
+                        parameters: self.split_params()?,
+                    })),
 
-                    _ => panic!("lel"),
+                    _ => {
+                        let error = Err(SplitterErrors::InstrNotImplemented(
+                            InstrNotImplementedError {
+                                line_count: self.line_count,
+                                position_in_line: self.position_in_line,
+                                instr_id: instr_id,
+                            },
+                        ));
+                        error
+                    }
                 }
             } else {
                 let error = Err(SplitterErrors::InstrNotAllowedInContext(
@@ -338,20 +397,22 @@ impl<'a> Splitter<'a> {
 
             // Check if the first char is valid
             if !self.curr_char.is_alphabetic() {
-                self.errors.push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
-                    line_count: self.line_count,
-                    position_in_line: self.position_in_line,
-                    char: self.curr_char,
-                    expected: "Expected alphabetical character".to_string(),
-                }));
-
-                while !(self.curr_char == ':' || self.curr_char == ',') {
-                    self.errors.push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+                self.errors
+                    .push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
                         line_count: self.line_count,
                         position_in_line: self.position_in_line,
                         char: self.curr_char,
                         expected: "Expected alphabetical character".to_string(),
                     }));
+
+                while !(self.curr_char == ':' || self.curr_char == ',') {
+                    self.errors
+                        .push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+                            line_count: self.line_count,
+                            position_in_line: self.position_in_line,
+                            char: self.curr_char,
+                            expected: "Expected alphabetical character".to_string(),
+                        }));
 
                     self.next_char(true, false)?;
                 }
@@ -375,12 +436,13 @@ impl<'a> Splitter<'a> {
 
             // The next character has to be a colon
             while self.curr_char != ':' {
-                self.errors.push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
-                    line_count: self.line_count,
-                    position_in_line: self.position_in_line,
-                    char: self.curr_char,
-                    expected: "Expected :".to_string(),
-                }));
+                self.errors
+                    .push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+                        line_count: self.line_count,
+                        position_in_line: self.position_in_line,
+                        char: self.curr_char,
+                        expected: "Expected :".to_string(),
+                    }));
 
                 self.next_char(true, false)?;
             }
@@ -439,17 +501,18 @@ impl<'a> Splitter<'a> {
                 return Ok(structure);
             } else {
                 while !(self.curr_char == ',' || self.curr_char == ']') {
-                    self.errors.push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
-                        line_count: self.line_count,
-                        position_in_line: self.position_in_line,
-                        char: self.curr_char,
-                        expected: "Expected comma or ]".to_string(),
-                    }));
+                    self.errors
+                        .push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+                            line_count: self.line_count,
+                            position_in_line: self.position_in_line,
+                            char: self.curr_char,
+                            expected: "Expected comma or ]".to_string(),
+                        }));
 
                     self.next_char(true, false)?;
-                    }
                 }
             }
+        }
 
         Ok(structure)
     }
@@ -458,7 +521,7 @@ impl<'a> Splitter<'a> {
         let mut params: Vec<Block> = Vec::new();
 
         while self.curr_char != ')' {
-            self.next_char(true, false)?; 
+            self.next_char(true, false)?;
 
             if self.curr_char == ')' {
                 return Ok(params);
@@ -479,11 +542,9 @@ impl<'a> Splitter<'a> {
             }
             if self.curr_char == ',' {
                 continue;
-            }
-            else if self.curr_char == ')' {
+            } else if self.curr_char == ')' {
                 return Ok(params);
-            }
-            else {
+            } else {
                 self.errors
                     .push(SplitterErrors::UnknownChar(UnknownCharError {
                         char: self.curr_char,
@@ -522,12 +583,11 @@ impl<'a> Splitter<'a> {
                     });
                 }
 
-                let block = self.check_instr_type(identifier, Context::Main);
+                let res = self.check_instr_type(identifier, Context::Main);
 
-                if block.is_ok() {
-                    main_block.body.push(block.unwrap())
-                } else if block.is_err() {
-                    self.errors.push(block.err().unwrap())
+                match res {
+                    Ok(block) => main_block.body.push(block),
+                    Err(err) => self.errors.push(err),
                 }
 
                 c = self.next_char(true, true).unwrap_or_else(|err| {
@@ -557,7 +617,7 @@ impl<'a> Splitter<'a> {
         }
 
         Block::InstrWithBody(main_block)
-    }
+    }   
 
     pub fn print_errors(&self) {
         for error in self.errors.iter() {
@@ -566,15 +626,17 @@ impl<'a> Splitter<'a> {
                     "Unknown character: {} on line {}  at character {}",
                     info.char, info.line_count, info.position_in_line
                 ),
-
                 SplitterErrors::UnknownInstr(info) => println!(
                     "Unknown instruction: {} on line {} at character {}",
                     info.instr_id, info.line_count, info.position_in_line
                 ),
-
                 SplitterErrors::InstrNotAllowedInContext(info) => println!(
                     "Instruction {} is not allowed in {}: on line {} at character {}",
                     info.instr_id, info.context, info.line_count, info.position_in_line
+                ),
+                SplitterErrors::InstrNotImplemented(info) => println!(
+                    "Instruction {} on line {} at character {} is not yet implemented",
+                    info.instr_id, info.line_count, info.position_in_line
                 ),
                 SplitterErrors::UnexpectedEOF(info) => println!(
                     "Unexpected End Of File on line {} at character {}",
