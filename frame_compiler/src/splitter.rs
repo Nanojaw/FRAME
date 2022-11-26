@@ -22,14 +22,12 @@ struct Instruction<'a> {
     allowed_contexts: Vec<Context>,
 }
 
-#[derive(Debug)]
 struct UnknownCharError {
     char: char,
     line_count: i32,
     position_in_line: i32,
 }
 
-#[derive(Debug)]
 struct UnknownInstrError {
     line_count: i32,
     position_in_line: i32,
@@ -37,7 +35,6 @@ struct UnknownInstrError {
     instr_id: String,
 }
 
-#[derive(Debug)]
 struct InstrNotAllowedInContextError {
     line_count: i32,
     position_in_line: i32,
@@ -53,13 +50,11 @@ struct InstrNotImplementedError {
     instr_id: String,
 }
 
-#[derive(Debug)]
 struct UnexpectedEOFError {
     line_count: i32,
     position_in_line: i32,
 }
 
-#[derive(Debug)]
 struct UnexpectedCharError {
     line_count: i32,
     position_in_line: i32,
@@ -68,7 +63,13 @@ struct UnexpectedCharError {
     expected: String, // Information about what was expected
 }
 
-//#[derive(Debug)]
+struct MissingExpectedError {
+    line_count: i32,
+    position_in_line: i32,
+
+    expected: String,
+}
+
 enum SplitterErrors {
     UnknownChar(UnknownCharError),
     UnknownInstr(UnknownInstrError),
@@ -76,6 +77,7 @@ enum SplitterErrors {
     InstrNotImplemented(InstrNotImplementedError),
     UnexpectedEOF(UnexpectedEOFError),
     UnexpectedChar(UnexpectedCharError),
+    MissingExpected(MissingExpectedError),
 }
 
 pub struct ValueBlock {
@@ -120,10 +122,10 @@ impl Block {
                     println!("{}  Variable: {}", indent_str, entry.var_name);
                     println!("{}  Type: {}", indent_str, entry.frame_type);
                     if entry.value.is_some() {
-                        println!("{} Value: ", indent_str);
-                        entry.value.as_ref().unwrap().print(indent + 2)
+                        println!("{}  Value: ", indent_str);
+                        entry.value.as_ref().unwrap().print(indent + 4)
                     } else {
-                        println!("{} Value: Empty", indent_str);
+                        println!("{}  Value: Empty", indent_str);
                     }
                 }
             }
@@ -142,7 +144,7 @@ impl Block {
                 }
 
                 for i in 0..block.parameters.len() {
-                    block.parameters[i].print(indent + 2)
+                    block.parameters[i].print(indent + 4)
                 }
             }
             Block::InstrWithBody(block) => {
@@ -156,7 +158,7 @@ impl Block {
                 }
 
                 for i in 0..block.parameters.len() {
-                    block.parameters[i].print(indent + 2)
+                    block.parameters[i].print(indent + 4)
                 }
 
                 print!("{}  Body: ", indent_str);
@@ -168,7 +170,7 @@ impl Block {
                 }
 
                 for i in 0..block.body.len() {
-                    block.body[i].print(indent + 2)
+                    block.body[i].print(indent + 4)
                 }
             }
         };
@@ -190,7 +192,7 @@ impl<'a> Splitter<'a> {
             chars: content.chars(),
             curr_char: ' ',
             errors: Vec::new(),
-            line_count: 0,
+            line_count: 1,
             position_in_line: 0,
             instructions: [
                 Instruction {
@@ -392,9 +394,9 @@ impl<'a> Splitter<'a> {
             entries: Vec::new(),
         };
 
-        while self.curr_char != ']' {
-            self.next_char(true, false)?;
+        self.next_char(true, false)?;
 
+        while self.curr_char != ']' {
             // Check if the first char is valid
             if !self.curr_char.is_alphabetic() {
                 self.errors
@@ -402,23 +404,26 @@ impl<'a> Splitter<'a> {
                         line_count: self.line_count,
                         position_in_line: self.position_in_line,
                         char: self.curr_char,
-                        expected: "Expected alphabetical character".to_string(),
+                        expected: "alphabetical character".to_string(),
                     }));
 
-                while !(self.curr_char == ':' || self.curr_char == ',') {
-                    self.errors
-                        .push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
-                            line_count: self.line_count,
-                            position_in_line: self.position_in_line,
-                            char: self.curr_char,
-                            expected: "Expected alphabetical character".to_string(),
-                        }));
-
+                // Skip forward
+                while !(self.curr_char == ':' || self.curr_char == ',' || self.curr_char == ']') {
                     self.next_char(true, false)?;
                 }
 
+                self.errors
+                    .push(SplitterErrors::MissingExpected(MissingExpectedError {
+                        line_count: self.line_count,
+                        position_in_line: self.position_in_line,
+                        expected: "field name".to_string(),
+                    }));
+
                 if self.curr_char == ',' {
+                    self.next_char(true, false)?;
                     continue;
+                } else if self.curr_char == ']' {
+                    break;
                 }
             }
 
@@ -441,7 +446,7 @@ impl<'a> Splitter<'a> {
                         line_count: self.line_count,
                         position_in_line: self.position_in_line,
                         char: self.curr_char,
-                        expected: "Expected :".to_string(),
+                        expected: "colon".to_string(),
                     }));
 
                 self.next_char(true, false)?;
@@ -456,12 +461,30 @@ impl<'a> Splitter<'a> {
 
             // Types always start with a alphabetical character
             if !self.curr_char.is_alphabetic() {
-                return Err(SplitterErrors::UnexpectedChar(UnexpectedCharError {
-                    line_count: self.line_count,
-                    position_in_line: self.position_in_line,
-                    char: self.curr_char,
-                    expected: "Expected alphabetical character".to_string(),
-                }));
+                self.errors
+                    .push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+                        line_count: self.line_count,
+                        position_in_line: self.position_in_line,
+                        char: self.curr_char,
+                        expected: "alphabetical character".to_string(),
+                    }));
+
+                // Skip forward
+                while !(self.curr_char == '=' || self.curr_char == ',' || self.curr_char == ']') {
+                    self.next_char(true, false)?;
+                }
+                self.errors
+                    .push(SplitterErrors::MissingExpected(MissingExpectedError {
+                        line_count: self.line_count,
+                        position_in_line: self.position_in_line,
+                        expected: "type".to_string(),
+                    }));
+                if self.curr_char == ',' {
+                    self.next_char(true, false)?;
+                    continue;
+                } else if self.curr_char == ']' {
+                    break;
+                }
             }
 
             // Extract the type
@@ -494,26 +517,25 @@ impl<'a> Splitter<'a> {
                 value,
             });
 
-            if self.curr_char == ',' {
-                continue;
-            } else if self.curr_char == ']' {
-                self.next_char(false, false)?;
-                return Ok(structure);
-            } else {
-                while !(self.curr_char == ',' || self.curr_char == ']') {
-                    self.errors
-                        .push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
-                            line_count: self.line_count,
-                            position_in_line: self.position_in_line,
-                            char: self.curr_char,
-                            expected: "Expected comma or ]".to_string(),
-                        }));
+            while !(self.curr_char == ',' || self.curr_char == ']') {
+                self.errors
+                    .push(SplitterErrors::UnexpectedChar(UnexpectedCharError {
+                        line_count: self.line_count,
+                        position_in_line: self.position_in_line,
+                        char: self.curr_char,
+                        expected: "comma or ]".to_string(),
+                    }));
 
-                    self.next_char(true, false)?;
-                }
+                self.next_char(true, false)?;
+            }
+
+            if self.curr_char == ',' {
+                self.next_char(true, false)?;
+                continue;
             }
         }
 
+        self.next_char(true, false)?;
         Ok(structure)
     }
 
@@ -617,7 +639,7 @@ impl<'a> Splitter<'a> {
         }
 
         Block::InstrWithBody(main_block)
-    }   
+    }
 
     pub fn print_errors(&self) {
         for error in self.errors.iter() {
@@ -643,8 +665,12 @@ impl<'a> Splitter<'a> {
                     info.line_count, info.position_in_line
                 ),
                 SplitterErrors::UnexpectedChar(info) => println!(
-                    "Unexpected character {} on line {} at character {}. {}",
+                    "Unexpected character {} on line {} at character {}. Expected {}",
                     info.char, info.line_count, info.position_in_line, info.expected
+                ),
+                SplitterErrors::MissingExpected(info) => println!(
+                    "Missing expected {} on line {} at character {}",
+                    info.expected, info.line_count, info.position_in_line
                 ),
             }
         }

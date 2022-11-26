@@ -1,1 +1,1 @@
-set(a, [var:a i32 .  . ,  . , = 123])
+set(a, [var: type  value])
