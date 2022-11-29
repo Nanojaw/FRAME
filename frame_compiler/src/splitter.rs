@@ -17,9 +17,15 @@ impl std::fmt::Display for Context {
     }
 }
 
+enum InstructionType {
+    Regular,
+    WithBody,
+}
+
 struct Instruction<'a> {
     name: &'a str,
     allowed_contexts: Vec<Context>,
+    instr_type: InstructionType,
 }
 
 struct UnknownCharError {
@@ -198,31 +204,38 @@ impl<'a> Splitter<'a> {
                 Instruction {
                     name: "set",
                     allowed_contexts: vec![Context::Main, Context::Body],
+                    instr_type: InstructionType::Regular,
                 },
                 // Arithmetic
                 Instruction {
                     name: "add",
                     allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
                 },
                 Instruction {
                     name: "sub",
                     allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
                 },
                 Instruction {
                     name: "mul",
                     allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
                 },
                 Instruction {
                     name: "div",
                     allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
                 },
                 Instruction {
                     name: "pow",
                     allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
                 },
                 Instruction {
                     name: "rot",
                     allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
                 },
             ],
         }
@@ -275,48 +288,16 @@ impl<'a> Splitter<'a> {
                 .allowed_contexts
                 .contains(&call_context)
             {
-                match instr_id.as_str() {
-                    "set" => Ok(Block::Instr(InstrBlock {
+                match found_instr.unwrap().instr_type {
+                    InstructionType::Regular => Ok(Block::Instr(InstrBlock {
                         block: instr_id,
                         parameters: self.split_params()?,
                     })),
-
-                    // Arithmetic
-                    "add" => Ok(Block::Instr(InstrBlock {
+                    InstructionType::WithBody => Ok(Block::InstrWithBody(InstrWithBodyBlock {
                         block: instr_id,
                         parameters: self.split_params()?,
+                        body: self.split_body()?,
                     })),
-                    "sub" => Ok(Block::Instr(InstrBlock {
-                        block: instr_id,
-                        parameters: self.split_params()?,
-                    })),
-                    "mul" => Ok(Block::Instr(InstrBlock {
-                        block: instr_id,
-                        parameters: self.split_params()?,
-                    })),
-                    "div" => Ok(Block::Instr(InstrBlock {
-                        block: instr_id,
-                        parameters: self.split_params()?,
-                    })),
-                    "pow" => Ok(Block::Instr(InstrBlock {
-                        block: instr_id,
-                        parameters: self.split_params()?,
-                    })),
-                    "rot" => Ok(Block::Instr(InstrBlock {
-                        block: instr_id,
-                        parameters: self.split_params()?,
-                    })),
-
-                    _ => {
-                        let error = Err(SplitterErrors::InstrNotImplemented(
-                            InstrNotImplementedError {
-                                line_count: self.line_count,
-                                position_in_line: self.position_in_line,
-                                instr_id: instr_id,
-                            },
-                        ));
-                        error
-                    }
                 }
             } else {
                 let error = Err(SplitterErrors::InstrNotAllowedInContext(
@@ -577,6 +558,10 @@ impl<'a> Splitter<'a> {
         }
 
         Ok(params)
+    }
+
+    fn split_body(&mut self) -> Result<Vec<Block>, SplitterErrors> {
+        todo!()
     }
 
     pub fn split_file(&mut self) -> Block {
