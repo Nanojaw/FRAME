@@ -5,14 +5,14 @@ The FRAME programming language, built with LLVM
 #### Basic structure
 `instruction(parameter, parameter)`
 
-The basic structure of FRAME is built on a system where a built-in instructionhe parameters are surrounded by parenthesis and separated with a comma.
+The basic syntax of FRAME is a system where a built-in instruction takes in parameters which are surrounded by parenthesis and separated with a comma.
+
+Modules for importing code
 
 
-modules for importing code
+Structures for clumping variables and functions
 
-structures for clumping variables and functions
-
-block = pointer with size
+Example function for calculating fibonacci numbers
 
     fn(fib, [x: int], int) {
         if smaller (x, 3)
