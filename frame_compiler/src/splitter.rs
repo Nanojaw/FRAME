@@ -432,6 +432,8 @@ impl<'a> Splitter<'a> {
                 self.next_char(false, false)?;
             }
 
+            self.next_char(true, false)?;
+
             Ok(Block::Value(ValueBlock {
                 block: string_str,
                 is_string: true,
