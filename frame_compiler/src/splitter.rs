@@ -89,9 +89,9 @@ pub struct InstrBlock {
 }
 
 pub struct InstrWithBodyBlock {
-    block: String,
-    parameters: Vec<Block>,
-    body: Vec<Block>,
+    pub block: String,
+    pub parameters: Vec<Block>,
+    pub body: Vec<Block>,
 }
 
 pub struct StructureEntry {
@@ -199,7 +199,7 @@ pub struct Splitter<'a> {
     errors: Vec<SplitterErrors>,
     line_count: i32,
     position_in_line: i32,
-    instructions: [Instruction<'a>; 20],
+    instructions: [Instruction<'a>; 21],
 }
 
 impl<'a> Splitter<'a> {
@@ -217,14 +217,19 @@ impl<'a> Splitter<'a> {
                     instr_type: InstructionType::Regular,
                 },
                 Instruction {
-                    name: "fn",
-                    allowed_contexts: vec![Context::Main],
-                    instr_type: InstructionType::WithBody,
-                },
-                Instruction {
                     name: "do",
                     allowed_contexts: vec![Context::ParameterOrStructure],
                     instr_type: InstructionType::Regular,
+                },
+                Instruction {
+                    name: "index",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
+                },
+                Instruction {
+                    name: "fn",
+                    allowed_contexts: vec![Context::Main],
+                    instr_type: InstructionType::WithBody,
                 },
                 // Arithmetic
                 Instruction {
@@ -443,15 +448,30 @@ impl<'a> Splitter<'a> {
         else if self.curr_char == '{' {
             self.next_char(true, false)?;
 
+            if self.curr_char == '}' {
+                self.next_char(true, false)?;
+                
+                return Ok(Block::Array(ArrayBlock {
+                    values: vec![],
+                }));
+            }
+            
+
             let mut array_values: Vec<Block> = vec![];
 
             while !(self.curr_char == '}') {
                 array_values.push(self.split_value()?);
 
-                self.next_char(true, false)?;
-            }
+                if self.curr_char == '}' {
+                    self.next_char(true, false)?;
 
-            self.next_char(true, false)?;
+                    return Ok(Block::Array(ArrayBlock {
+                        values: array_values,
+                    }));
+                } else {
+                    self.next_char(true, false)?;
+                }
+            }
 
             Ok(Block::Array(ArrayBlock {
                 values: array_values,
@@ -681,14 +701,24 @@ impl<'a> Splitter<'a> {
 
     fn split_body(&mut self) -> Result<Vec<Block>, SplitterErrors> {
         self.next_char(true, false)?;
+        self.next_char(true, false)?;
 
         let mut body: Vec<Block> = vec![];
 
         while !(self.curr_char == '}') {
-            self.next_char(true, false)?;
-            
-            
+            let mut identifier: String = String::new();
 
+            while self.curr_char.is_alphabetic() {
+                identifier.push(self.curr_char);
+                self.next_char(false, false)?;
+            }
+
+            let split = self.check_instr_type(identifier.clone(), Context::Body);
+
+            if split.is_ok() {
+                self.next_char(true, false)?;
+                body.push(split.ok().unwrap());
+            }
         }
 
 

@@ -1,7 +1,7 @@
 use std::fs;
 
 mod splitter;
-//mod parser;
+mod parser;
 
 use clap::Parser;
 #[derive(Parser)]
@@ -15,14 +15,9 @@ fn main() {
     
     // Create splitter and split file
     let mut splitter = splitter::Splitter::new(&file);
-    let main_block = splitter.split_file();
-
-    main_block.print(0);
+    let main_block = splitter.split_file().parse();
 
     splitter.print_errors();
-
-
-    //let parsed_block = block.expect("File was invalid").parse();
 
     println!("{}", "finished");
 }
