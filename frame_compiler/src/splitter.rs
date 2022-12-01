@@ -49,13 +49,6 @@ struct InstrNotAllowedInContextError {
     context: Context,
 }
 
-struct InstrNotImplementedError {
-    line_count: i32,
-    position_in_line: i32,
-
-    instr_id: String,
-}
-
 struct UnexpectedEOFError {
     line_count: i32,
     position_in_line: i32,
@@ -80,7 +73,6 @@ enum SplitterErrors {
     UnknownChar(UnknownCharError),
     UnknownInstr(UnknownInstrError),
     InstrNotAllowedInContext(InstrNotAllowedInContextError),
-    InstrNotImplemented(InstrNotImplementedError),
     UnexpectedEOF(UnexpectedEOFError),
     UnexpectedChar(UnexpectedCharError),
     MissingExpected(MissingExpectedError),
@@ -88,6 +80,7 @@ enum SplitterErrors {
 
 pub struct ValueBlock {
     block: String,
+    is_string: bool,
 }
 
 pub struct InstrBlock {
@@ -111,11 +104,16 @@ pub struct StructureBlock {
     entries: Vec<StructureEntry>,
 }
 
+pub struct ArrayBlock {
+    values: Vec<Block>,
+}
+
 pub enum Block {
     Value(ValueBlock),
     Instr(InstrBlock),
     InstrWithBody(InstrWithBodyBlock),
     Structure(StructureBlock),
+    Array(ArrayBlock),
 }
 
 impl Block {
@@ -136,7 +134,11 @@ impl Block {
                 }
             }
             Block::Value(block) => {
-                println!("{}Block: {}", indent_str, block.block)
+                println!("{}Block: {}", indent_str, block.block);
+
+                if block.is_string == true {
+                    println!("{}Is string: {}", indent_str + "  ", block.is_string);
+                }
             }
             Block::Instr(block) => {
                 println!("{}Block: {}", indent_str, block.block);
@@ -179,6 +181,14 @@ impl Block {
                     block.body[i].print(indent + 4)
                 }
             }
+
+            Block::Array(block) => {
+                println!("{}Block: Array", indent_str);
+
+                for v in 0..block.values.len() {
+                    block.values[v].print(indent + 2);
+                }
+            }
         };
     }
 }
@@ -189,7 +199,7 @@ pub struct Splitter<'a> {
     errors: Vec<SplitterErrors>,
     line_count: i32,
     position_in_line: i32,
-    instructions: [Instruction<'a>; 7],
+    instructions: [Instruction<'a>; 20],
 }
 
 impl<'a> Splitter<'a> {
@@ -204,6 +214,16 @@ impl<'a> Splitter<'a> {
                 Instruction {
                     name: "set",
                     allowed_contexts: vec![Context::Main, Context::Body],
+                    instr_type: InstructionType::Regular,
+                },
+                Instruction {
+                    name: "fn",
+                    allowed_contexts: vec![Context::Main],
+                    instr_type: InstructionType::WithBody,
+                },
+                Instruction {
+                    name: "do",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
                     instr_type: InstructionType::Regular,
                 },
                 // Arithmetic
@@ -234,6 +254,63 @@ impl<'a> Splitter<'a> {
                 },
                 Instruction {
                     name: "rot",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
+                },
+                // Flow control
+                Instruction {
+                    name: "if",
+                    allowed_contexts: vec![Context::Main, Context::Body],
+                    instr_type: InstructionType::WithBody,
+                },
+                Instruction {
+                    name: "else",
+                    allowed_contexts: vec![Context::Main, Context::Body],
+                    instr_type: InstructionType::WithBody,
+                },
+                Instruction {
+                    name: "for",
+                    allowed_contexts: vec![Context::Main, Context::Body],
+                    instr_type: InstructionType::WithBody,
+                },
+                // Logic
+                Instruction {
+                    name: "eq",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
+                },
+                Instruction {
+                    name: "not",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
+                },
+                Instruction {
+                    name: "and",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
+                },
+                Instruction {
+                    name: "or",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
+                },
+                Instruction {
+                    name: "lt",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
+                },
+                Instruction {
+                    name: "gt",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
+                },
+                Instruction {
+                    name: "lte",
+                    allowed_contexts: vec![Context::ParameterOrStructure],
+                    instr_type: InstructionType::Regular,
+                },
+                Instruction {
+                    name: "gte",
                     allowed_contexts: vec![Context::ParameterOrStructure],
                     instr_type: InstructionType::Regular,
                 },
@@ -338,8 +415,45 @@ impl<'a> Splitter<'a> {
                 self.next_char(false, false)?;
                 return split;
             } else {
-                return Ok(Block::Value(ValueBlock { block: identifier }));
+                return Ok(Block::Value(ValueBlock {
+                    block: identifier,
+                    is_string: false,
+                }));
             }
+        }
+        // String handling
+        else if self.curr_char == '"' {
+            self.next_char(true, false)?;
+
+            let mut string_str: String = String::new();
+
+            while !(self.curr_char == '"') {
+                string_str.push(self.curr_char);
+                self.next_char(false, false)?;
+            }
+
+            Ok(Block::Value(ValueBlock {
+                block: string_str,
+                is_string: true,
+            }))
+        }
+        // Array handling
+        else if self.curr_char == '{' {
+            self.next_char(true, false)?;
+
+            let mut array_values: Vec<Block> = vec![];
+
+            while !(self.curr_char == '}') {
+                array_values.push(self.split_value()?);
+
+                self.next_char(true, false)?;
+            }
+
+            self.next_char(true, false)?;
+
+            Ok(Block::Array(ArrayBlock {
+                values: array_values,
+            }))
         }
         // Number handling
         else if self.curr_char.is_digit(10) || self.curr_char == '-' {
@@ -355,7 +469,10 @@ impl<'a> Splitter<'a> {
                 self.next_char(false, false)?;
             }
 
-            return Ok(Block::Value(ValueBlock { block: number_str }));
+            return Ok(Block::Value(ValueBlock {
+                block: number_str,
+                is_string: false,
+            }));
         }
         // Structure handling
         else if self.curr_char == '[' {
@@ -561,7 +678,19 @@ impl<'a> Splitter<'a> {
     }
 
     fn split_body(&mut self) -> Result<Vec<Block>, SplitterErrors> {
-        todo!()
+        self.next_char(true, false)?;
+
+        let mut body: Vec<Block> = vec![];
+
+        while !(self.curr_char == '}') {
+            self.next_char(true, false)?;
+            
+            
+
+        }
+
+
+        Ok(body)
     }
 
     pub fn split_file(&mut self) -> Block {
@@ -569,6 +698,7 @@ impl<'a> Splitter<'a> {
             block: "fn".to_string(),
             parameters: vec![Block::Value(ValueBlock {
                 block: "main".to_string(),
+                is_string: false,
             })],
             body: Vec::new(),
         };
@@ -640,10 +770,6 @@ impl<'a> Splitter<'a> {
                 SplitterErrors::InstrNotAllowedInContext(info) => println!(
                     "Instruction {} is not allowed in {}: on line {} at character {}",
                     info.instr_id, info.context, info.line_count, info.position_in_line
-                ),
-                SplitterErrors::InstrNotImplemented(info) => println!(
-                    "Instruction {} on line {} at character {} is not yet implemented",
-                    info.instr_id, info.line_count, info.position_in_line
                 ),
                 SplitterErrors::UnexpectedEOF(info) => println!(
                     "Unexpected End Of File on line {} at character {}",
