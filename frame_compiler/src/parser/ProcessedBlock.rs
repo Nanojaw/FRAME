@@ -26,7 +26,7 @@ pub enum InstrIdentifiers {
 }
 
 impl InstrIdentifiers {
-    pub fn which(id: String) -> Self {
+    pub fn which(id: &String) -> Self {
         match id.as_str() {
             "set" => InstrIdentifiers::Set,
             "do" => InstrIdentifiers::Do,
@@ -49,6 +49,8 @@ impl InstrIdentifiers {
             "gt" => InstrIdentifiers::Gt,
             "lte" => InstrIdentifiers::Lte,
             "gte" => InstrIdentifiers::Gte,
+
+            _ => panic!("lol"),
         }
     }
 }
@@ -59,6 +61,93 @@ pub struct ProcessedInstrWithBodyBlock {
     pub body: Vec<ProcessedBlock>,
 }
 
+pub struct ProcessedInstrBlock {
+    pub identifier: InstrIdentifiers,
+    pub parameters: Vec<ProcessedBlock>,
+}
+
+pub enum NumberType {
+    Signed(i128),
+    Unsigned(u128),
+    Float(f64),
+}
+
+pub enum ValueTypes {
+    Bool(bool),
+    String(String),
+    Number(NumberType),
+    Variable(String),
+}
+
+pub struct ProcessedValueBlock {
+    pub value: ValueTypes,
+}
+
+impl ProcessedValueBlock {
+    pub fn which(&self) -> String {
+        match self.value {
+            ValueTypes::Bool(_) => "B".to_string(),
+            ValueTypes::String(_) => "S".to_string(),
+            ValueTypes::Number(_) => "N".to_string(),
+            ValueTypes::Variable(_) => "V".to_string(),
+        }
+    }
+}
+
+pub struct ProcessedStructureBlock {
+    pub entries: Vec<ProcessedStructureEntry>,
+}
+
+pub enum GenericTypes {
+    Bool,
+    String,
+    Number,
+    Variable,
+    Array,
+    Structure,
+}
+
+impl GenericTypes {
+    pub fn which(id: &String) -> Self {
+        match id.as_str() {
+            "bool" => GenericTypes::Bool,
+            "string" => GenericTypes::String,
+            "number" => GenericTypes::Number,
+            "variable" => GenericTypes::Variable,
+            "array" => GenericTypes::Array,
+            "structure" => GenericTypes::Structure,
+            _ => panic!("lol"),
+        }
+    }
+}
+
+pub struct ProcessedStructureEntry {
+    pub variable_string: String,
+    pub variable_type: GenericTypes,
+    pub value: Option<ProcessedBlock>,
+}
+
+pub struct ProcessedArrayBlock {
+    pub entries: Vec<ProcessedBlock>,
+    pub t: GenericTypes,
+}
+
 pub enum ProcessedBlock {
     ProcessedInstrWithBody(ProcessedInstrWithBodyBlock),
+    ProcessedInstr(ProcessedInstrBlock),
+    ProcessedValue(ProcessedValueBlock),
+    ProcessedStructure(ProcessedStructureBlock),
+    ProcessedArray(ProcessedArrayBlock),
+}
+
+impl ProcessedBlock {
+    pub fn which(&self) -> String {
+        match self {
+            ProcessedBlock::ProcessedInstrWithBody(_) => "PIWB".to_string(),
+            ProcessedBlock::ProcessedInstr(_) => "PIB".to_string(),
+            ProcessedBlock::ProcessedValue(_) => "PVB".to_string(),
+            ProcessedBlock::ProcessedStructure(_) => "PSB".to_string(),
+            ProcessedBlock::ProcessedArray(_) => "PAB".to_string(),
+        }
+    }
 }

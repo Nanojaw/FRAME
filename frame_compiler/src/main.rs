@@ -2,6 +2,7 @@ use std::fs;
 
 mod splitter;
 mod parser;
+mod codegen;
 
 use clap::Parser;
 #[derive(Parser)]
@@ -15,7 +16,11 @@ fn main() {
     
     // Create splitter and split file
     let mut splitter = splitter::Splitter::new(&file);
-    let main_block = splitter.split_file().parse();
+    let split_main_file = splitter.split_file();
+
+    // Parse file
+    let parsed_main_file = split_main_file.parse();
+    let 
 
     splitter.print_errors();
 

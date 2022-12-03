@@ -79,13 +79,13 @@ enum SplitterErrors {
 }
 
 pub struct ValueBlock {
-    block: String,
-    is_string: bool,
+    pub block: String,
+    pub is_string: bool,
 }
 
 pub struct InstrBlock {
-    block: String,
-    parameters: Vec<Block>,
+    pub block: String,
+    pub parameters: Vec<Block>,
 }
 
 pub struct InstrWithBodyBlock {
@@ -95,17 +95,17 @@ pub struct InstrWithBodyBlock {
 }
 
 pub struct StructureEntry {
-    var_name: String,
-    frame_type: String,
-    value: Option<Block>,
+    pub var_name: String,
+    pub frame_type: String,
+    pub value: Option<Block>,
 }
 
 pub struct StructureBlock {
-    entries: Vec<StructureEntry>,
+    pub entries: Vec<StructureEntry>,
 }
 
 pub struct ArrayBlock {
-    values: Vec<Block>,
+    pub values: Vec<Block>,
 }
 
 pub enum Block {
@@ -730,7 +730,7 @@ impl<'a> Splitter<'a> {
             block: "fn".to_string(),
             parameters: vec![Block::Value(ValueBlock {
                 block: "main".to_string(),
-                is_string: false,
+                is_string: true,
             })],
             body: Vec::new(),
         };
@@ -770,6 +770,11 @@ impl<'a> Splitter<'a> {
                         return None;
                     });
                 }
+
+                c = self.next_char(false, true).unwrap_or_else(|err| {
+                    self.errors.push(err);
+                    return None;
+                });
             } else {
                 self.errors
                     .push(SplitterErrors::UnknownChar(UnknownCharError {
