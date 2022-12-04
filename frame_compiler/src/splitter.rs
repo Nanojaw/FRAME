@@ -199,7 +199,7 @@ pub struct Splitter<'a> {
     errors: Vec<SplitterErrors>,
     line_count: i32,
     position_in_line: i32,
-    instructions: [Instruction<'a>; 21],
+    instructions: [Instruction<'a>; 23],
 }
 
 impl<'a> Splitter<'a> {
@@ -230,6 +230,11 @@ impl<'a> Splitter<'a> {
                     name: "fn",
                     allowed_contexts: vec![Context::Main],
                     instr_type: InstructionType::WithBody,
+                },
+                Instruction {
+                    name: "return",
+                    allowed_contexts: vec![Context::Body],
+                    instr_type: InstructionType::Regular,
                 },
                 // Arithmetic
                 Instruction {
@@ -267,6 +272,11 @@ impl<'a> Splitter<'a> {
                     name: "if",
                     allowed_contexts: vec![Context::Main, Context::Body],
                     instr_type: InstructionType::WithBody,
+                },
+                Instruction {
+                    name: "elseif",
+                    allowed_contexts: vec![Context::Main, Context::Body],
+                    instr_type: InstructionType::WithBody
                 },
                 Instruction {
                     name: "else",

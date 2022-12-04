@@ -4,6 +4,8 @@ pub enum InstrIdentifiers {
     Index,
     Fn,
 
+    Return,
+
     Add,
     Sub,
     Mul,
@@ -12,6 +14,7 @@ pub enum InstrIdentifiers {
     Rot,
 
     If,
+    ElseIf,
     Else,
     For,
 
@@ -32,15 +35,21 @@ impl InstrIdentifiers {
             "do" => InstrIdentifiers::Do,
             "index" => InstrIdentifiers::Index,
             "fn" => InstrIdentifiers::Fn,
+
+            "return" => InstrIdentifiers::Return,
+            
             "add" => InstrIdentifiers::Add,
             "sub" => InstrIdentifiers::Sub,
             "mul" => InstrIdentifiers::Mul,
             "div" => InstrIdentifiers::Div,
             "pow" => InstrIdentifiers::Pow,
             "rot" => InstrIdentifiers::Rot,
+            
             "if" => InstrIdentifiers::If,
+            "elseif" => InstrIdentifiers::ElseIf,
             "else" => InstrIdentifiers::Else,
             "for" => InstrIdentifiers::For,
+            
             "eq" => InstrIdentifiers::Eq,
             "not" => InstrIdentifiers::Not,
             "and" => InstrIdentifiers::And,
@@ -50,7 +59,7 @@ impl InstrIdentifiers {
             "lte" => InstrIdentifiers::Lte,
             "gte" => InstrIdentifiers::Gte,
 
-            _ => panic!("lol"),
+            _ => panic!("{} is not implemented in language", id),
         }
     }
 }
@@ -116,7 +125,7 @@ impl GenericTypes {
             "variable" => GenericTypes::Variable,
             "array" => GenericTypes::Array,
             "structure" => GenericTypes::Structure,
-            _ => panic!("lol"),
+            _ => panic!("{} is not a FRAME type", id),
         }
     }
 }

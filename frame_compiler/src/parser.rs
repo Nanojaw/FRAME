@@ -90,7 +90,7 @@ impl Block {
                                 },
                             )),
 
-                            _ => panic!("lol")
+                            _ => panic!("huh")
                         }
                     } else {
                         return Some(ProcessedBlock::ProcessedBlock::ProcessedValue(
