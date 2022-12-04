@@ -20,7 +20,6 @@ fn main() {
 
     // Parse file
     let parsed_main_file = split_main_file.parse();
-    let 
 
     splitter.print_errors();
 

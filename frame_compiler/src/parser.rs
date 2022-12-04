@@ -1,6 +1,6 @@
 use crate::splitter::*;
 
-mod ProcessedBlock;
+pub mod ProcessedBlock;
 use ProcessedBlock::*;
 
 impl Block {
@@ -63,7 +63,7 @@ impl Block {
                         return Some(ProcessedBlock::ProcessedBlock::ProcessedValue(
                             ProcessedValueBlock {
                                 value: ProcessedBlock::ValueTypes::Number(NumberType::Signed(
-                                    block.block.parse::<i128>().unwrap(),
+                                    block.block.parse::<i64>().unwrap(),
                                 )),
                             },
                         ));
@@ -71,7 +71,7 @@ impl Block {
                         return Some(ProcessedBlock::ProcessedBlock::ProcessedValue(
                             ProcessedValueBlock {
                                 value: ProcessedBlock::ValueTypes::Number(NumberType::Unsigned(
-                                    block.block.parse::<u128>().unwrap(),
+                                    block.block.parse::<u64>().unwrap(),
                                 )),
                             },
                         ));

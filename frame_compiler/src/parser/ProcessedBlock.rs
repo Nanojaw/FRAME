@@ -67,8 +67,8 @@ pub struct ProcessedInstrBlock {
 }
 
 pub enum NumberType {
-    Signed(i128),
-    Unsigned(u128),
+    Signed(i64),
+    Unsigned(u64),
     Float(f64),
 }
 
