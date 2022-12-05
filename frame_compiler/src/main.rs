@@ -21,6 +21,15 @@ fn main() {
     // Parse file
     let parsed_main_file = split_main_file.parse();
 
+    let compiler = codegen::Compiler::new("main_module");
+
+    
+    if parsed_main_file.is_some() {
+        compiler.compile(&parsed_main_file.unwrap());
+    } else {
+        panic!("Could not parse file")
+    }
+
     splitter.print_errors();
 
     println!("{}", "finished");

@@ -26,7 +26,7 @@ fn basic_to_any(value: BasicValueEnum) -> AnyValueEnum {
     }
 }
 
-struct Compiler<'ctx> {
+pub struct Compiler<'ctx> {
     context: Context,
     builder: Builder<'ctx>,
     module: Module<'ctx>,
@@ -51,6 +51,7 @@ impl<'ctx> Compiler<'ctx> {
         self.module.get_function(name)
     }
 
+    /*
     fn compile_basic_value(&mut self, block: &ProcessedBlock) -> Result<BasicValueEnum, String> {
         match block {
             ProcessedBlock::ProcessedValue(block) => match block.value {
@@ -85,10 +86,12 @@ impl<'ctx> Compiler<'ctx> {
             )),
         }
     }
-
-    pub fn compile(&mut self, block: ProcessedBlock) -> Result<AnyValueEnum, String> {
+*/
+ 
+    pub fn compile(&mut self, block: &ProcessedBlock) -> Result<AnyValueEnum, String> {
         match block {
-            ProcessedBlock::ProcessedInstrWithBody(block) => todo!(),
+            ProcessedBlock::ProcessedInstrWithBody(block) => Err("This is not implemented yet".to_string()),
+            
             ProcessedBlock::ProcessedInstr(block) => match block.identifier {
                 InstrIdentifiers::Set => {
                     if block.parameters.len() != 2 {
@@ -118,17 +121,20 @@ impl<'ctx> Compiler<'ctx> {
                         _ => return Err(format!("First parameter must be a value")),
                     };
 
+                    // Propagate the error
+                    let value = self.compile_basic_value(&block.parameters[1])?;
+                    
                     if !self.variables.contains_key(var_name) {
                         let ptr = self.builder.build_alloca(value.get_type(), var_name);
                         self.builder.build_store(ptr, value);
                         self.variables.insert(*var_name, ptr);
                     }
 
-                    // Propagate the error
-                    let value = self.compile_basic_value(&block.parameters[1])?;
 
                     return Err(format!("todo"));
-                }
+                },
+
+                _ => return Err(format!("Instr is not implemented"))
             },
             
             ProcessedBlock::ProcessedValue(block) => match block.value {
@@ -156,9 +162,11 @@ impl<'ctx> Compiler<'ctx> {
                 },
             },
             ProcessedBlock::ProcessedStructure(_) => todo!(),
+
             ProcessedBlock::ProcessedArray(_) => todo!(),
+
             _ => Err(format!(
-                "Block must be of type Value, Array, or Structure. Got {}",
+                "Block must be of type InstrWithBody, Instr, Value, Array, or Structure. Got {}",
                 block.which()
             )),
 
