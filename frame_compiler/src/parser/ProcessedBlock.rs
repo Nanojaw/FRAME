@@ -29,7 +29,7 @@ pub enum InstrIdentifiers {
 }
 
 impl InstrIdentifiers {
-    pub fn which(id: &String) -> Self {
+    pub fn which_to(id: &String) -> Self {
         match id.as_str() {
             "set" => InstrIdentifiers::Set,
             "do" => InstrIdentifiers::Do,
@@ -60,6 +60,34 @@ impl InstrIdentifiers {
             "gte" => InstrIdentifiers::Gte,
 
             _ => panic!("{} is not implemented in language", id),
+        }
+    }
+
+    pub fn which_from(&self) -> String {
+        match self {
+            InstrIdentifiers::Set => "set".to_string(),
+            InstrIdentifiers::Do => "do".to_string(),
+            InstrIdentifiers::Index => todo!(),
+            InstrIdentifiers::Fn => todo!(),
+            InstrIdentifiers::Return => todo!(),
+            InstrIdentifiers::Add => "add".to_string(),
+            InstrIdentifiers::Sub => "sub".to_string(),
+            InstrIdentifiers::Mul => "mul".to_string(),
+            InstrIdentifiers::Div => "div".to_string(),
+            InstrIdentifiers::Pow => "pow".to_string(),
+            InstrIdentifiers::Rot => "rot".to_string(),
+            InstrIdentifiers::If => todo!(),
+            InstrIdentifiers::ElseIf => todo!(),
+            InstrIdentifiers::Else => todo!(),
+            InstrIdentifiers::For => todo!(),
+            InstrIdentifiers::Eq => todo!(),
+            InstrIdentifiers::Not => todo!(),
+            InstrIdentifiers::And => todo!(),
+            InstrIdentifiers::Or => todo!(),
+            InstrIdentifiers::Lt => todo!(),
+            InstrIdentifiers::Gt => todo!(),
+            InstrIdentifiers::Lte => todo!(),
+            InstrIdentifiers::Gte => todo!(),
         }
     }
 }

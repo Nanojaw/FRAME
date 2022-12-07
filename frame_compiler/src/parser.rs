@@ -7,7 +7,7 @@ impl Block {
     pub fn parse(&self) -> Option<ProcessedBlock::ProcessedBlock> {
         match self {
             Block::InstrWithBody(block) => {
-                let instr_identifier = InstrIdentifiers::which(&block.block);
+                let instr_identifier = InstrIdentifiers::which_to(&block.block);
 
                 let mut parameters: Vec<ProcessedBlock::ProcessedBlock> = vec![];
                 for i in 0..block.parameters.len() {
@@ -28,7 +28,7 @@ impl Block {
                 ));
             }
             Block::Instr(block) => {
-                let instr_identifier = InstrIdentifiers::which(&block.block);
+                let instr_identifier = InstrIdentifiers::which_to(&block.block);
 
                 let mut parameters: Vec<ProcessedBlock::ProcessedBlock> = vec![];
                 for i in 0..block.parameters.len() {

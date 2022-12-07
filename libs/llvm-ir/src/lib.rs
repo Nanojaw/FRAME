@@ -38,6 +38,9 @@ pub use terminator::Terminator;
 pub mod types;
 pub use types::{Type, TypeRef};
 
+pub mod translator;
+use translator::IrEnum;
+
 macro_rules! case {
     ($feature:expr) => {
         if cfg!(feature = $feature) {

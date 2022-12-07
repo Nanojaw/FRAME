@@ -1,1 +1,1 @@
-set(huh, [x: array = {"123", add(1, m)}])
+add(1, 2)

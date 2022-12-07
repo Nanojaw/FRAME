@@ -375,10 +375,10 @@ impl<'a> Splitter<'a> {
         });
 
         if found_instr.is_some() {
-            if found_instr
+            if /*found_instr
                 .unwrap()
                 .allowed_contexts
-                .contains(&call_context)
+                .contains(&call_context) */ true
             {
                 match found_instr.unwrap().instr_type {
                     InstructionType::Regular => Ok(Block::Instr(InstrBlock {
