@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.0.22", features = ["derive"] }
-inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", features = ["llvm14-0"] }
+llvm-ir = { path = "../libs/llvm-ir", features = ["llvm-14"] }

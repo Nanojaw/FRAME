@@ -1,11 +1,9 @@
-use std::{fs, collections::HashMap};
+use std::fs;
 
 mod splitter;
 mod parser;
-mod codegen;
 
 use clap::Parser;
-use inkwell::context::Context;
 #[derive(Parser)]
 pub struct Cli {
     pub path: std::path::PathBuf,
@@ -21,17 +19,6 @@ fn main() {
 
     // Parse file
     let parsed_main_file = split_main_file.parse();
-
-    let context = Context::create();
-    let module = context.create_module("main_module");
-    let mut codegen = codegen::CodeGen {
-        context: &context,
-        module,
-        builder: context.create_builder(),
-        variables: HashMap::new()
-    };
-
-    codegen.compile(&parsed_main_file.unwrap());
 
     splitter.print_errors();
 
