@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.0.22", features = ["derive"] }
-llvm-ir = { path = "../libs/llvm-ir", features = ["llvm-14"] }
 
 [profile.release]
 lto = true
