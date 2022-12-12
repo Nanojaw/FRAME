@@ -13,7 +13,7 @@ fn main() {
     let file = fs::read_to_string(&args.path).expect("Could not read file");
 
     // Parse file into a vector of blocks
-    let mut splitter = splitter::splitter::new(&file);
+    let mut splitter = splitter::Splitter::new(&file);
 
     let yes = splitter::split_file(&mut splitter);
 
