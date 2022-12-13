@@ -1,1 +1,1 @@
-add("asd", "yes")
+add(true, false, "yes", -1, 1, 1.2, a, {true,false,"yes",-1,1,1.2,a})

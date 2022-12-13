@@ -52,7 +52,7 @@ impl Instructions {
             "lte" => Ok(Instructions::Lte),
             "gte" => Ok(Instructions::Gte),
 
-            _ => Err(format!("{} is not a frame instruction", id))
+            _ => Err(format!("{} is not a frame instruction", id)),
         }
     }
 }

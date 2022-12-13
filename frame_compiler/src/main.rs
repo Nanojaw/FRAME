@@ -23,5 +23,10 @@ fn main() {
         return;
     }
 
+    for b in yes.unwrap().into_iter() {
+        b.print(0, ' ');
+    }
+
+
     println!("{}", "finished");
 }
