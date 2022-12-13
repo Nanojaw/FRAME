@@ -1,1 +1,5 @@
-add(true, false, "yes", -1, 1, 1.2, a, {true,false,"yes",-1,1,1.2,a})
+set([huhVal: array2d_unsigned])
+
+set([huhVal: float = 1.2])
+
+set([huhVal: float], [huhStr: str = "#"])

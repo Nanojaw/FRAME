@@ -176,6 +176,57 @@ pub fn split_parameter(splitter: &mut Splitter) -> Result<block::Block, String> 
             splitter.next_char(true, true)?;
 
             return Ok(block::Block::Array(block::ArrayBlock { values: contents }));
+        } else if splitter.curr_char.unwrap() == '[' {
+            splitter.next_char(true, false)?;
+            let var_name_block = split_parameter(splitter)?;
+
+            let mut var_name = String::new();
+            if let block::Block::PrimitiveValue(pv) = var_name_block {
+                var_name = pv.value;
+            }
+
+            splitter.next_char(true, false)?;
+
+            let mut type_str = String::new();
+            while splitter.curr_char.is_some() && splitter.curr_char.unwrap().is_alphabetic()
+                || splitter.curr_char.unwrap().is_digit(10)
+                || splitter.curr_char.unwrap() == '_'
+            {
+                type_str.push(splitter.curr_char.unwrap());
+                splitter.next_char(false, false)?;
+            }
+
+            let mut var_type: frame_type::FrameType;
+
+            let var_type_test = frame_type::FrameType::which(type_str.clone());
+            if var_type_test.is_err() {
+                let array_end_type = frame_type::FrameType::which(
+                    type_str.split('_').collect::<Vec<&str>>()[1].to_string(),
+                )?;
+
+                let dims = &type_str[5..5 + (type_str.find('d').unwrap() - 5)]
+                    .parse::<i8>()
+                    .unwrap();
+
+                var_type = frame_type::FrameType::Array(frame_type::ArrayType {
+                    dimensions: *dims,
+                    values_type: Box::new(array_end_type),
+                })
+            } else {
+                var_type = var_type_test.unwrap();
+            }
+
+            if splitter.curr_char.is_some() && splitter.curr_char.unwrap() == ']' {
+                splitter.next_char(true, false)?;
+
+                return Ok(block::Block::Structure(block::StructureBlock {
+                    var_name: var_name,
+                    var_type: var_type,
+                    var_value: Box::new(None),
+                }));
+            }
+
+            splitter.next_char(true, false)?;
         }
     }
 

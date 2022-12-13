@@ -3,7 +3,7 @@ use super::block;
 
 pub struct ArrayType {
     pub dimensions: i8,
-    pub values_type: Box<block::Block>,
+    pub values_type: Box<FrameType>,
 }
 
 pub enum FrameType {
@@ -14,6 +14,20 @@ pub enum FrameType {
     Float,
     Variable,
     Array(ArrayType),
+}
+
+impl FrameType {
+    pub fn which(id: String) -> Result<Self, String> {
+        match id.as_str() {
+            "bool" => Ok(FrameType::Bool),
+            "str" => Ok(FrameType::Str),
+            "signed" => Ok(FrameType::Signed),
+            "unsigned" => Ok(FrameType::Unsigned),
+            "float" => Ok(FrameType::Float),
+            "var" => Ok(FrameType::Variable),
+            _ => Err("Prolly an array".to_string())
+        }
+    }
 }
 
 impl std::fmt::Display for FrameType {
