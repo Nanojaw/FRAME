@@ -47,7 +47,7 @@ impl Block {
             let mut str = String::new();
 
             for i in 0..indent {
-                str += indent_char.to_string().as_str();
+                str.push(indent_char)
             }
 
             str
