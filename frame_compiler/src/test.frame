@@ -1,4 +1,4 @@
-set([huhVal: array2d_unsigned])
+set([huhVal: array2d_unsigned ])
 
 set([huhVal: float = 1.2])
 

@@ -227,6 +227,30 @@ pub fn split_parameter(splitter: &mut Splitter) -> Result<block::Block, String> 
             }
 
             splitter.next_char(true, false)?;
+
+            if splitter.curr_char.is_some() && splitter.curr_char.unwrap() == ']' {
+                splitter.next_char(true, false)?;
+
+                return Ok(block::Block::Structure(block::StructureBlock {
+                    var_name: var_name,
+                    var_type: var_type,
+                    var_value: Box::new(None),
+                }));
+            }
+
+            if splitter.curr_char.is_some() && splitter.curr_char.unwrap() == '=' {
+                splitter.next_char(true, false)?;
+
+                let var_value = split_parameter(splitter)?;
+
+                splitter.next_char(true, false)?;
+
+                return Ok(block::Block::Structure(block::StructureBlock {
+                    var_name: var_name,
+                    var_type: var_type,
+                    var_value: Box::new(Some(var_value)),
+                }));
+            }
         }
     }
 
