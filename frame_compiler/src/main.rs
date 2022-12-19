@@ -23,9 +23,7 @@ fn main() {
         return;
     }
 
-    for b in yes.unwrap().into_iter() {
-        b.print(0, ' ');
-    }
+    println!("{}", yes.unwrap().to_cpp(0, '\t'));
 
 
     println!("{}", "finished");
