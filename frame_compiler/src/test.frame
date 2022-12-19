@@ -1,5 +1,13 @@
-set([huhVal: array2d_unsigned ])
 
-set([huhVal: float = 1.2])
+fn(fib, [fibIdx: unsigned], unsigned) {
+    if(lte(fibIdx, 2)) {
+        return(1)
+    }
+    else() {
+        return(add(do(fib, sub(fibIdx, 1)),do(fib, sub(fibIdx, 2))))
+    }
+}
 
-set([huhVal: float], [huhStr: str = "#"])
+fn(main, unsigned) {
+    set([fibHuH: unsigned], do(fib, 8))
+}

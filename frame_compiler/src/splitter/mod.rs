@@ -1,4 +1,4 @@
-use std::str::Chars;
+use std::{ops::Deref, str::Chars};
 
 pub mod block;
 pub mod frame_type;
@@ -53,7 +53,7 @@ impl<'a> Splitter<'a> {
 }
 
 pub fn split_instr(splitter: &mut Splitter, identifier: String) -> Result<block::Block, String> {
-    let instr_type = instr_type::toInstrType(&identifier)?;
+    let instr_type = instr_type::to_instr_type(&identifier)?;
 
     if let instr_type::InstrType::Regular = instr_type {
         let mut parameters: Vec<block::Block> = vec![];
@@ -75,9 +75,175 @@ pub fn split_instr(splitter: &mut Splitter, identifier: String) -> Result<block:
             instruction: instruction::Instructions::from_str(identifier)?,
             parameters: parameters,
         }));
-    }
+    } else {
+        if identifier == "fn" {
+            let mut parameters: Vec<block::Block> = vec![];
 
-    Err(format!("{} is not an  instruction", identifier))
+            splitter.next_char(true, false)?;
+
+            while splitter.curr_char.is_some() && splitter.curr_char.unwrap() != ')' {
+                parameters.push(split_parameter(splitter)?);
+
+                if splitter.curr_char.unwrap() == ')' {
+                    splitter.next_char(true, true)?;
+                    break;
+                }
+
+                splitter.next_char(true, false)?;
+            }
+
+            let mut fn_name = String::new();
+            if let block::Block::PrimitiveValue(pV) = &parameters[0] {
+                if let frame_type::FrameType::Variable = pV.value_type {
+                    fn_name = pV.value.to_string();
+                }
+            }
+
+            let mut fn_return_type: frame_type::FrameType = frame_type::FrameType::Bool;
+            if let block::Block::PrimitiveValue(pV) = &parameters[parameters.len() - 1] {
+                if let frame_type::FrameType::Variable = pV.value_type {
+                    let fn_return_type_test = frame_type::FrameType::which(pV.value.to_string());
+
+                    fn_return_type = match fn_return_type_test {
+                        Ok(fn_return_type) => fn_return_type,
+                        Err(_) => {
+                            let array_end_type = frame_type::FrameType::which(
+                                pV.value.split('_').collect::<Vec<&str>>()[1].to_string(),
+                            )?;
+
+                            let dims = &pV.value[5..5 + (pV.value.find('d').unwrap() - 5)]
+                                .parse::<i8>()
+                                .unwrap();
+
+                            frame_type::FrameType::Array(frame_type::ArrayType {
+                                dimensions: *dims,
+                                values_type: Box::new(array_end_type),
+                            })
+                        }
+                    };
+                }
+            }
+
+            let mut fn_params: Vec<block::StructureBlock> = vec![];
+            for i in 1..parameters.len() - 1 {
+                if let block::Block::Structure(structure) = &parameters[i] {
+                    fn_params.push(structure.clone());
+                }
+            }
+
+            splitter.next_char(true, false)?;
+
+            let mut fn_body: Vec<block::Block> = vec![];
+
+            while splitter.curr_char.is_some() && splitter.curr_char.unwrap() != '}' {
+                if splitter.curr_char.unwrap().is_alphabetic() {
+                    let mut identifier = String::new();
+
+                    while splitter.curr_char.is_some()
+                        && splitter.curr_char.unwrap().is_alphanumeric()
+                    {
+                        identifier.push(splitter.curr_char.unwrap());
+                        splitter.next_char(false, false)?;
+                    }
+
+                    fn_body.push(split_instr(splitter, identifier)?);
+                } else if splitter.curr_char.unwrap() == '#' {
+                    let mut comment = String::new();
+
+                    while splitter.curr_char.is_some() && splitter.curr_char.unwrap() != '\n' {
+                        splitter.next_char(false, true)?;
+
+                        if splitter.curr_char.is_some() && splitter.curr_char.unwrap() == '\n' {
+                            splitter.next_char(true, true)?;
+                            break;
+                        }
+
+                        comment.push(splitter.curr_char.unwrap());
+                    }
+
+                    fn_body.push(block::Block::Comment(block::CommentBlock {
+                        value: comment,
+                    }));
+                } else {
+                    return Err(format!(
+                        "{} at position {} in line {} is not allowed",
+                        splitter.curr_char.unwrap(),
+                        splitter.position_in_line,
+                        splitter.line_count
+                    ));
+                }
+            }
+
+            return Ok(block::Block::Function(block::FunctionBlock {
+                name: fn_name,
+                parameters: fn_params,
+                body: fn_body,
+                return_type: fn_return_type,
+            }));
+        } else {
+            let instr = instruction::InstructionsWithBody::from_str(identifier.to_string())?;
+
+            splitter.next_char(true, false)?;
+
+            let mut params: Vec<block::Block> = vec![];
+
+            if splitter.curr_char.is_some() && splitter.curr_char.unwrap() != ')' {
+                while splitter.curr_char.is_some() && splitter.curr_char.unwrap() != ')' {
+                    params.push(split_parameter(splitter)?);
+    
+                    if splitter.curr_char.unwrap() == ')' {
+                        break;
+                    }
+                }
+            }
+
+            splitter.next_char(true, false)?;
+            splitter.next_char(true, false)?;
+
+            let mut instr_body: Vec<block::Block> = vec![];
+
+            while splitter.curr_char.is_some() && splitter.curr_char.unwrap() != '}' {
+                if splitter.curr_char.unwrap().is_alphabetic() {
+                    let mut identifier = String::new();
+
+                    while splitter.curr_char.is_some()
+                        && splitter.curr_char.unwrap().is_alphanumeric()
+                    {
+                        identifier.push(splitter.curr_char.unwrap());
+                        splitter.next_char(false, false)?;
+                    }
+
+                    instr_body.push(split_instr(splitter, identifier)?);
+                } else if splitter.curr_char.unwrap() == '#' {
+                    let mut comment = String::new();
+
+                    while splitter.curr_char.is_some() && splitter.curr_char.unwrap() != '\n' {
+                        splitter.next_char(false, true)?;
+
+                        if splitter.curr_char.is_some() && splitter.curr_char.unwrap() == '\n' {
+                            splitter.next_char(true, true)?;
+                            break;
+                        }
+
+                        comment.push(splitter.curr_char.unwrap());
+                    }
+
+                    instr_body.push(block::Block::Comment(block::CommentBlock {
+                        value: comment,
+                    }));
+                } else {
+                    return Err(format!(
+                        "{} at position {} in line {} is not allowed",
+                        splitter.curr_char.unwrap(),
+                        splitter.position_in_line,
+                        splitter.line_count
+                    ));
+                }
+            }
+            splitter.next_char(true, false)?;
+            return Ok(block::Block::InstrWithBody(block::InstrWithBodyBlock { instruction: instr, parameters: params, body: instr_body }));
+        }
+    }
 }
 
 pub fn split_parameter(splitter: &mut Splitter) -> Result<block::Block, String> {
@@ -276,6 +442,7 @@ pub fn split_file(splitter: &mut Splitter) -> Result<Vec<block::Block>, String> 
             }
 
             blocks.push(split_instr(splitter, identifier)?);
+            splitter.next_char(true, true)?;
         } else if splitter.curr_char.unwrap() == '#' {
             let mut comment = String::new();
 

@@ -3,8 +3,9 @@ pub enum InstrType {
     WithBody,
 }
 
-pub fn toInstrType(instr_id: &String) -> Result<InstrType, String> {
+pub fn to_instr_type(instr_id: &String) -> Result<InstrType, String> {
     match instr_id.as_str() {
+        "fn" => Ok(InstrType::WithBody),
         "if" => Ok(InstrType::WithBody),
         "elseif" => Ok(InstrType::WithBody),
         "else" => Ok(InstrType::WithBody),

@@ -1,11 +1,13 @@
 use std::fmt::Formatter;
 use super::block;
 
+#[derive(Clone)]
 pub struct ArrayType {
     pub dimensions: i8,
     pub values_type: Box<FrameType>,
 }
 
+#[derive(Clone)]
 pub enum FrameType {
     Bool,
     Str,
