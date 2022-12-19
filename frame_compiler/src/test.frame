@@ -10,4 +10,6 @@ fn(fib, [fibIdx: unsigned], unsigned) {
 
 fn(main, unsigned) {
     set([fibHuH: unsigned], do(fib, 8))
+
+    return(0)
 }
