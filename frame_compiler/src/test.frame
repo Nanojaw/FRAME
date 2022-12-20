@@ -1,4 +1,3 @@
-
 fn(fib, [fibIdx: unsigned], unsigned) {
     if(lte(fibIdx, 2)) {
         return(1)

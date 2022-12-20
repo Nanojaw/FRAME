@@ -174,6 +174,8 @@ pub fn split_instr(splitter: &mut Splitter, identifier: String) -> Result<block:
                 }
             }
 
+            splitter.next_char(true, true)?;
+
             return Ok(block::Block::Function(block::FunctionBlock {
                 name: fn_name,
                 parameters: fn_params,
@@ -442,12 +444,15 @@ pub fn split_file(splitter: &mut Splitter) -> Result<Vec<block::Block>, String> 
             }
 
             blocks.push(split_instr(splitter, identifier)?);
-            splitter.next_char(true, true)?;
         } else if splitter.curr_char.unwrap() == '#' {
             let mut comment = String::new();
 
             while splitter.curr_char.is_some() && splitter.curr_char.unwrap() != '\n' {
                 splitter.next_char(false, true)?;
+
+                if splitter.curr_char.is_none() {
+                    break;
+                }
 
                 if splitter.curr_char.is_some() && splitter.curr_char.unwrap() == '\n' {
                     splitter.next_char(true, true)?;

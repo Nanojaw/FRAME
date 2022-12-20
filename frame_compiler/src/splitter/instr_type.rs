@@ -21,7 +21,10 @@ pub fn to_instr_type(instr_id: &String) -> Result<InstrType, String> {
         "mul" => Ok(InstrType::Regular),
         "div" => Ok(InstrType::Regular),
         "rot" => Ok(InstrType::Regular),
+
         "eq" => Ok(InstrType::Regular),
+        "and" => Ok(InstrType::Regular),
+        "or" => Ok(InstrType::Regular),
         "not" => Ok(InstrType::Regular),
         "lt" => Ok(InstrType::Regular),
         "gt" => Ok(InstrType::Regular),

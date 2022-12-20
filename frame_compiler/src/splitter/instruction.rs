@@ -1,4 +1,4 @@
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum InstructionsWithBody {
     // Flow control instructions
     Fn,
@@ -49,6 +49,8 @@ pub enum Instructions {
 
     // Logic instructions
     Eq,
+    And,
+    Or,
     Not,
     Lt,
     Gt,
@@ -69,6 +71,8 @@ impl std::fmt::Display for Instructions {
             Instructions::Div => write!(f, "{}", "div"),
             Instructions::Rot => write!(f, "{}", "rot"),
             Instructions::Eq => write!(f, "{}", "eq"),
+            Instructions::And => write!(f, "{}", "and"),
+            Instructions::Or => write!(f, "{}", "or"),
             Instructions::Not => write!(f, "{}", "not"),
             Instructions::Lt => write!(f, "{}", "lt"),
             Instructions::Gt => write!(f, "{}", "gt"),
@@ -96,6 +100,8 @@ impl Instructions {
 
             // Logic instructions
             "eq" => Ok(Instructions::Eq),
+            "and" => Ok(Instructions::And),
+            "or" => Ok(Instructions::Or),
             "not" => Ok(Instructions::Not),
             "lt" => Ok(Instructions::Lt),
             "gt" => Ok(Instructions::Gt),

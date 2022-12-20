@@ -40,7 +40,7 @@ impl std::fmt::Display for FrameType {
             FrameType::Signed => write!(f, "Signed number"),
             FrameType::Unsigned => write!(f, "Unsigned number"),
             FrameType::Float => write!(f, "Double"),
-            FrameType::Variable => write!(f, "var"),
+            FrameType::Variable => write!(f, "Var"),
             FrameType::Array(_) => write!(f, "Array"),
         }
     }
